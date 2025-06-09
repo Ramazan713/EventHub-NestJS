@@ -1,10 +1,13 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
-import { AuthCredentialsDto } from './dto/user-credentials.dto';
-import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { User } from 'generated/prisma';
+import { UserDto } from 'src/users/dto/user.dto';
+import { UsersService } from 'src/users/users.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { LoginRequestDto } from './dto/login-request.dto';
+import { SignUpRequestDto } from './dto/signup-request.dto';
+
 
 @Injectable()
 export class AuthService {
@@ -16,8 +19,8 @@ export class AuthService {
 
     }
 
-    async signUp(authCredentials: AuthCredentialsDto): Promise<AuthResponseDto>{
-        const { email, password } = authCredentials
+    async signUp(signUpRequestDto: SignUpRequestDto): Promise<AuthResponseDto>{
+        const { email, password } = signUpRequestDto
         const user = await this.usersService.findUserByEmail(email)
         if(user){
             throw new BadRequestException("user with given email already exists")
@@ -29,13 +32,13 @@ export class AuthService {
         const token = await this.generateToken(createdUser)
         return {
             token,
-            user: createdUser
+            user: UserDto.fromUser(createdUser)
         }
     }
 
 
-    async login(authCredentials: AuthCredentialsDto): Promise<AuthResponseDto>{
-        const { email, password } = authCredentials
+    async login(loginRequestDto: LoginRequestDto): Promise<AuthResponseDto>{
+        const { email, password } = loginRequestDto
         const user = await this.usersService.findUserByEmail(email)
         if(!user){
             throw new UnauthorizedException("user not found or credentials are incorrect")
@@ -47,7 +50,7 @@ export class AuthService {
         const token = await this.generateToken(user)
         return {
             token,
-            user: user
+            user: UserDto.fromUser(user)
         }
     }
 

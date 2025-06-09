@@ -1,7 +1,7 @@
-import { User } from "generated/prisma";
+import { UserDto } from "src/users/dto/user.dto";
 
 
 export class AuthResponseDto {
-    user: User
+    user: UserDto
     token: string
 }
