@@ -5,8 +5,8 @@ import { User } from 'generated/prisma';
 import { UserDto } from 'src/users/dto/user.dto';
 import { UsersService } from 'src/users/users.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { LoginRequestDto } from './dto/login-request.dto';
 import { SignUpRequestDto } from './dto/signup-request.dto';
+import { TokenPayload } from './token-payload.interface';
 
 
 @Injectable()
@@ -21,7 +21,7 @@ export class AuthService {
 
     async signUp(signUpRequestDto: SignUpRequestDto): Promise<AuthResponseDto>{
         const { email, password } = signUpRequestDto
-        const user = await this.usersService.findUserByEmail(email)
+        const user = await this.usersService.findRawUserByEmail(email)
         if(user){
             throw new BadRequestException("user with given email already exists")
         }
@@ -32,14 +32,20 @@ export class AuthService {
         const token = await this.generateToken(createdUser)
         return {
             token,
-            user: UserDto.fromUser(createdUser)
+            user: createdUser
         }
     }
 
+    async login(user: UserDto): Promise<AuthResponseDto>{
+        const token = await this.generateToken(user)
+        return {
+            token,
+            user: user
+        }
+    }
 
-    async login(loginRequestDto: LoginRequestDto): Promise<AuthResponseDto>{
-        const { email, password } = loginRequestDto
-        const user = await this.usersService.findUserByEmail(email)
+    async validateUser(email: string, password: string): Promise<UserDto> {
+        const user = await this.usersService.findRawUserByEmail(email)
         if(!user){
             throw new UnauthorizedException("user not found or credentials are incorrect")
         }
@@ -47,16 +53,12 @@ export class AuthService {
         if(!passwordMatch){
             throw new UnauthorizedException("user not found or credentials are incorrect")
         } 
-        const token = await this.generateToken(user)
-        return {
-            token,
-            user: UserDto.fromUser(user)
-        }
+        return UserDto.fromUser(user)
     }
 
 
-    private async generateToken(user: User): Promise<string> {
-        const payload = { sub: user.id, email: user.email }
+    private async generateToken(user: User | UserDto): Promise<string> {
+        const payload: TokenPayload = { sub: user.id, email: user.email }
         return this.jwtService.signAsync(payload)
     }
 
