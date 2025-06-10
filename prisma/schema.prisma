@@ -14,7 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
@@ -23,10 +22,40 @@ model User {
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  events Event[]
+}
+
+model Event {
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String
+  category    EventCategory @default(OTHER)
+  date        DateTime
+  price       Float
+  capacity    Int?
+  isOnline    Boolean       @default(false)
+  location    String?
+  isPublished Boolean       @default(false)
+  isCancelled Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  organizerId Int
+  organizer   User @relation(fields: [organizerId], references: [id])
 }
 
 enum Role {
   USER
   ORGANIZER
   ADMIN
+}
+
+enum EventCategory {
+  WORKSHOP
+  SEMINAR
+  CONCERT
+  MEETUP
+  WEBINAR
+  OTHER
 }
