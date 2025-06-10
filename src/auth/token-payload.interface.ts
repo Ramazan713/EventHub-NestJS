@@ -1,6 +1,8 @@
+import { Role } from "generated/prisma";
 
 
 export interface TokenPayload {
     sub: number,
-    email: string
+    email: string,
+    role: Role
 }

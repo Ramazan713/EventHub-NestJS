@@ -1,6 +1,6 @@
 
 import { Exclude, Expose, plainToInstance } from 'class-transformer';
-import { User } from 'generated/prisma';
+import { Role, User } from 'generated/prisma';
 
 @Exclude()
 export class UserDto {
@@ -14,7 +14,7 @@ export class UserDto {
   name?: string;
 
   @Expose()
-  role: string;
+  role: Role;
 
   @Expose()
   createdAt: Date;
