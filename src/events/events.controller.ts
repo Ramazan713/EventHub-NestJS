@@ -1,29 +1,35 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CreateEventDto } from './dto/create-event.dto';
-import { EventsService } from './events.service';
-import { EventDto } from './dto/event.dto';
-import { CurrentUser } from 'src/auth/current-user.decorator';
-import { TokenPayload } from 'src/auth/token-payload.interface';
-import { Roles } from 'src/auth/roles.decorator';
+import { Controller, Get, HttpCode, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
 import { Role } from 'generated/prisma';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { TokenPayload } from 'src/auth/token-payload.interface';
+import { EventDto } from './dto/event.dto';
+import { EventsService } from './events.service';
 
+@UseGuards(RolesGuard)
 @UseGuards(JwtAuthGuard)
+@Roles(Role.ORGANIZER, Role.ADMIN)
 @Controller('events')
 export class EventsController {
 
     constructor(private eventsService: EventsService){}
 
-    @HttpCode(201)
-    @Roles(Role.ORGANIZER, Role.ADMIN)
-    @UseGuards(RolesGuard)
-    @Post()
-    async createEvent(
-        @CurrentUser() user: TokenPayload,
-        @Body() createEventDto: CreateEventDto
-    ): Promise<EventDto>{
-        return await this.eventsService.createEvent(user.sub, createEventDto)
+    @Get()
+    async getEvents(
+        @CurrentUser() user: TokenPayload
+    ): Promise<EventDto[]> {
+        return this.eventsService.getEvents(user.sub);
     }
 
+    @HttpCode(200)
+    @Post(":id/cancel")
+    async cancelEvent(
+        @CurrentUser() user: TokenPayload,
+        @Param("id", ParseIntPipe) eventId: number
+    ): Promise<EventDto> {
+        return this.eventsService.cancelEvent(user.sub, eventId);
+    }
+    
 }

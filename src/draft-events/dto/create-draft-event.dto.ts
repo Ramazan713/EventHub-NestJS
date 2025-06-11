@@ -3,7 +3,7 @@ import { IsBoolean, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, 
 import { EventCategory } from "generated/prisma"
 
 
-export class CreateEventDto {
+export class CreateDraftEventDto {
 
     @IsString()
     @MinLength(3)
@@ -41,7 +41,4 @@ export class CreateEventDto {
     @MaxLength(50)
     @IsOptional()
     location?: string
-
-    @IsBoolean()
-    isPublished: boolean = false
 }
