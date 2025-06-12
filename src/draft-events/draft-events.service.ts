@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import { TokenPayload } from '../auth/token-payload.interface';
@@ -48,7 +48,7 @@ export class DraftEventsService {
             }
         });
         if (!draft) {
-            throw new BadRequestException("Draft not found");
+            throw new NotFoundException("Draft not found");
         }
         return DraftEventDto.fromDraftEvent(draft);
     }
@@ -61,7 +61,7 @@ export class DraftEventsService {
             }
         });
         if (!draft) {
-            throw new BadRequestException("Draft not found");
+            throw new NotFoundException("Draft not found");
         }
 
         const minFutureDate = moment(new Date()).add(1,"h").toDate();
@@ -70,7 +70,7 @@ export class DraftEventsService {
         }
 
         const updatedDraft = await this.prisma.draftEvent.update({
-            where: { id },
+            where: { id, organizerId: tokenPayload.sub },
             data: updateDraftDto
         });
 
@@ -85,11 +85,11 @@ export class DraftEventsService {
             }
         });
         if (!draft) {
-            throw new BadRequestException("Draft not found");
+            throw new NotFoundException("Draft not found");
         }
 
         await this.prisma.draftEvent.delete({
-            where: { id }
+            where: { id, organizerId }
         });
     }
 
@@ -101,7 +101,7 @@ export class DraftEventsService {
             }
         });
         if (!draft) {
-            throw new BadRequestException("Draft not found");
+            throw new NotFoundException("Draft not found");
         }
 
         const minFutureDate = moment(new Date()).add(1,"h").toDate();
@@ -135,7 +135,7 @@ export class DraftEventsService {
             }
         });
         if (!event) {
-            throw new BadRequestException("Event not found");
+            throw new NotFoundException("Event not found");
         }
         const draft = await this.prisma.draftEvent.findFirst({
             where: {
