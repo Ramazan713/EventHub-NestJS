@@ -1,6 +1,6 @@
 import { Type } from "class-transformer"
 import { IsBoolean, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MAX, MaxLength, Min, MinLength } from "class-validator"
-import { EventCategory } from "generated/prisma"
+import { EventCategory } from "../../../generated/prisma"
 
 
 export class CreateDraftEventDto {

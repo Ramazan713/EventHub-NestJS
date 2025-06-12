@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { Role } from "generated/prisma";
+import { Role } from "../../generated/prisma";
 import { ROLES_KEY } from "./roles.decorator";
 import { TokenPayload } from "./token-payload.interface";
 

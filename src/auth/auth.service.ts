@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'generated/prisma';
-import { UserDto } from 'src/users/dto/user.dto';
-import { UsersService } from 'src/users/users.service';
+import { User } from '../../generated/prisma';
+import { UserDto } from '../users/dto/user.dto';
+import { UsersService } from '../users/users.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { SignUpRequestDto } from './dto/signup-request.dto';
 import { TokenPayload } from './token-payload.interface';

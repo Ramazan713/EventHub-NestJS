@@ -1,6 +1,6 @@
 
 import { Exclude, Expose, plainToInstance } from 'class-transformer';
-import { Role, User } from 'generated/prisma';
+import { Role, User } from '../../../generated/prisma';
 
 @Exclude()
 export class UserDto {

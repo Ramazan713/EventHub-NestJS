@@ -1,10 +1,10 @@
 import { Controller, Get, HttpCode, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
-import { Role } from 'generated/prisma';
-import { CurrentUser } from 'src/auth/current-user.decorator';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { Roles } from 'src/auth/roles.decorator';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { TokenPayload } from 'src/auth/token-payload.interface';
+import { Role } from '../../generated/prisma';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { TokenPayload } from '../auth/token-payload.interface';
 import { EventDto } from './dto/event.dto';
 import { EventsService } from './events.service';
 

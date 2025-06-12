@@ -1,5 +1,5 @@
 import { Exclude, Expose, plainToInstance } from "class-transformer"
-import { Event, EventCategory } from "generated/prisma"
+import { Event, EventCategory } from "../../../generated/prisma"
 
 @Exclude()
 export class EventDto {

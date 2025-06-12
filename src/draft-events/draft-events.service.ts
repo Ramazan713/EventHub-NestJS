@@ -1,12 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
-import { TokenPayload } from 'src/auth/token-payload.interface';
+import { TokenPayload } from '../auth/token-payload.interface';
 import * as moment from 'moment';
 import { DraftEventDto } from './dto/draft-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
-import { Event } from 'generated/prisma';
-import { EventDto } from 'src/events/dto/event.dto';
+import { EventDto } from '../events/dto/event.dto';
 import { pick } from 'lodash';
 
 @Injectable()

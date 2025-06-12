@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { DraftEventsService } from './draft-events.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
-import { CurrentUser } from 'src/auth/current-user.decorator';
-import { TokenPayload } from 'src/auth/token-payload.interface';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { Roles } from 'src/auth/roles.decorator';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { Role } from 'generated/prisma';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { TokenPayload } from '../auth/token-payload.interface';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { Role } from '../../generated/prisma';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 
 @UseGuards(RolesGuard)
