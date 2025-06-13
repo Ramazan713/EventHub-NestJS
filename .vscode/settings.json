@@ -1,0 +1,22 @@
+// .vscode/settings.json
+{
+  "jest.jestCommandLine": "npx jest --selectProjects unit --colors",
+  "jest.rootPath": "${workspaceFolder}",
+  "jest.runMode": "on-demand",
+  "jest.virtualFolders": [
+    {
+      "name": "unit",                
+      "rootPath": "src",              
+      "jestCommandLine": "npx jest --selectProjects unit --colors",
+      "runMode": "on-demand",
+      "autoEnable": true
+    },
+    {
+      "name": "e2e",                        
+      "rootPath": "test/e2e",               
+      "jestCommandLine": "npm run prisma:migrate:test && npx jest --selectProjects e2e --colors",
+      "runMode": "on-demand",              
+      "autoEnable": true             
+    }
+  ]
+}

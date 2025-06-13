@@ -1,10 +1,8 @@
 import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { Test } from "@nestjs/testing";
 import * as moment from 'moment';
 import * as request from 'supertest';
 import { EventCategory, Role } from "../../generated/prisma";
-import { AppModule } from "../../src/app.module";
 import { TokenPayload } from "../../src/auth/token-payload.interface";
 import { CreateDraftEventDto } from "../../src/draft-events/dto/create-draft-event.dto";
 import { PrismaService } from "../../src/prisma/prisma.service";
@@ -17,6 +15,7 @@ describe("DraftEvent", () => {
     let tokenPayload: TokenPayload
     let jwtService: JwtService
     let prisma: PrismaService;
+    let token: string
 
     beforeAll(async () => {
         app = global.app;
@@ -26,10 +25,15 @@ describe("DraftEvent", () => {
         tokenPayload = { sub: 1, email: "example@gmail.com", role: Role.ORGANIZER }
     })
 
+    const createUserAndToken = async (payload: TokenPayload = tokenPayload) => {
+        tokenPayload = payload
+        await createTestUser(prisma, payload)
+        token = await jwtService.signAsync(payload)
+    }
 
     describe("createDraftEvent", () => {
         let createDraftEventDto: CreateDraftEventDto
-        let token: string
+        
 
         beforeEach(async() => {
             const minFutureDate = moment(new Date()).add(3,"h").toDate() 
@@ -53,14 +57,14 @@ describe("DraftEvent", () => {
         }
 
         it("should throw if date is less than 1 hour in advance", async () => {
-            await createTestUser(prisma, tokenPayload)
+            await createUserAndToken()
             createDraftEventDto.date = new Date()
             const response = await execute(createDraftEventDto)
             expect(response.status).toBe(400)
         })
 
         it("should create draft-event", async () => {
-            await createTestUser(prisma, tokenPayload)
+            await createUserAndToken()
             const response = await execute(createDraftEventDto)
             expect(response.status).toBe(201)
             expect(response.body).toMatchObject({
@@ -71,7 +75,7 @@ describe("DraftEvent", () => {
         })
 
         it("should throw ForbiddenException if user is not an organizer", async () => {
-            await createTestUser(prisma, { ...tokenPayload, role: Role.USER })
+            await createUserAndToken({...tokenPayload, role: Role.USER})
             const response = await execute(createDraftEventDto)
             expect(response.status).toBe(403)
         })
