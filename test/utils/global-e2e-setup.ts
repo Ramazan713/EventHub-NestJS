@@ -16,13 +16,22 @@ beforeAll(async () => {
   }).compile();
 
   global.app = moduleFixture.createNestApplication();
-  await app.init();
-
   app.useGlobalPipes(new ValidationPipe({ 
-    transform: true
-   }));
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+    whitelist: true,
+  }));
+  
+  await app.init();
   global.prisma = global.app.get(PrismaService);
 });
+
+beforeEach(async () => {
+  await resetTestDatabase(prisma);
+  if (global.testContext) {
+        global.testContext = {};
+    }
+})
 
 afterEach(async () => {
   await resetTestDatabase(global.prisma);

@@ -2,11 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import { TokenPayload } from '../auth/token-payload.interface';
-import * as moment from 'moment';
 import { DraftEventDto } from './dto/draft-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 import { EventDto } from '../events/dto/event.dto';
 import { pick } from 'lodash';
+import { DateUtils } from '../common/date.utils';
 
 @Injectable()
 export class DraftEventsService {
@@ -16,9 +16,8 @@ export class DraftEventsService {
     ){}
 
     async createDraftEvent(tokenPayload: TokenPayload,createDraftEventDto: CreateDraftEventDto) {
-        const minFutureDate = moment(new Date()).add(1,"h").toDate();    
-        const eventDate = new Date(createDraftEventDto.date);
-        if(eventDate < minFutureDate){
+        const minFutureDate = DateUtils.addHours();
+        if(createDraftEventDto.date < minFutureDate){
             throw new BadRequestException("Date must be at least 1 hour in advance");
         }
         return this.prisma.draftEvent.create({
@@ -65,7 +64,7 @@ export class DraftEventsService {
             throw new NotFoundException("Draft not found");
         }
 
-        const minFutureDate = moment(new Date()).add(1,"h").toDate();
+        const minFutureDate = DateUtils.addHours();
         if(updateDraftDto.date && updateDraftDto.date < minFutureDate){
             throw new BadRequestException("Date must be at least 1 hour in advance");
         }
@@ -105,7 +104,7 @@ export class DraftEventsService {
             throw new NotFoundException("Draft not found");
         }
 
-        const minFutureDate = moment(new Date()).add(1,"h").toDate();
+        const minFutureDate = DateUtils.addHours();
         if(draft.date < minFutureDate){
             throw new BadRequestException("Date must be at least 1 hour in advance");
         }

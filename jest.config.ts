@@ -1,3 +1,4 @@
+
 export default {
   projects: [
     {
@@ -16,7 +17,6 @@ export default {
         transform: {
             "^.+\\.(t|j)s$": "ts-jest"
         },
-        // setupFiles: ["<rootDir>/test/utils/env-for-e2e.ts"],
         setupFilesAfterEnv: ["<rootDir>/test/utils/global-e2e-setup.ts"],
         moduleNameMapper: {
             "^@/(.*)$": "<rootDir>/src/$1"

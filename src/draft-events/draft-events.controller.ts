@@ -39,7 +39,7 @@ export class DraftEventsController {
     @Patch(":id")
     async updateDraftEvent(
         @CurrentUser() tokenPayload: TokenPayload,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id') id: number,
         @Body() updateDraftDto: UpdateDraftEventDto
     ) {
         return this.draftEventsService.updateDraft(id, tokenPayload, updateDraftDto)
@@ -58,7 +58,7 @@ export class DraftEventsController {
     @Delete(":id")
     async deleteDraft(
         @CurrentUser() tokenPayload: TokenPayload,
-        @Param('id', ParseIntPipe) id: number
+        @Param('id') id: number
     ) {
         return this.draftEventsService.deleteDraft(id, tokenPayload.sub);
     }
@@ -67,7 +67,7 @@ export class DraftEventsController {
     @Post(":id/publish")
     async publishDraft(
         @CurrentUser() tokenPayload: TokenPayload,
-        @Param('id', ParseIntPipe) id: number
+        @Param('id') id: number
     ) {
         return this.draftEventsService.publishDraft(id, tokenPayload.sub);
     }
@@ -76,7 +76,7 @@ export class DraftEventsController {
     @Post("from-event/:eventId")
     async createDraftFromEvent(
         @CurrentUser() tokenPayload: TokenPayload,
-        @Param('eventId', ParseIntPipe) eventId: number
+        @Param('eventId') eventId: number
     ) {
         return this.draftEventsService.createDraftFromEvent(tokenPayload, eventId);    
     }
