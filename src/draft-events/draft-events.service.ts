@@ -16,9 +16,10 @@ export class DraftEventsService {
     ){}
 
     async createDraftEvent(tokenPayload: TokenPayload,createDraftEventDto: CreateDraftEventDto) {
-        const minFutureDate = moment(new Date()).add(1,"h").toDate()        
-        if(createDraftEventDto.date < minFutureDate){
-            throw new BadRequestException("Date must be at least 1 hour in advance")
+        const minFutureDate = moment(new Date()).add(1,"h").toDate();    
+        const eventDate = new Date(createDraftEventDto.date);
+        if(eventDate < minFutureDate){
+            throw new BadRequestException("Date must be at least 1 hour in advance");
         }
         return this.prisma.draftEvent.create({
             data: {
