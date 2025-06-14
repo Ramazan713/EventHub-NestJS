@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { EventsModule } from './events/events.module';
 import { DraftEventsModule } from './draft-events/draft-events.module';
+import { EventParticipantsModule } from './event-participants/event-participants.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -20,6 +21,7 @@ import * as Joi from 'joi';
     PrismaModule,
     EventsModule,
     DraftEventsModule,
+    EventParticipantsModule,
   ],
 })
 export class AppModule {}
