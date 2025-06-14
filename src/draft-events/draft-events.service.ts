@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
-import { TokenPayload } from '../auth/token-payload.interface';
+import { TokenPayload } from '@/auth/token-payload.interface';
 import { DraftEventDto } from './dto/draft-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
-import { EventDto } from '../events/dto/event.dto';
+import { EventDto } from '@/events/dto/event.dto';
 import { pick } from 'lodash';
-import { DateUtils } from '../common/date.utils';
+import { DateUtils } from '@/common/date.utils';
 
 @Injectable()
 export class DraftEventsService {

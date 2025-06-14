@@ -1,6 +1,6 @@
-// test/utils/prisma-reset.ts
-import { PrismaService } from '../../src/prisma/prisma.service';
+import { PrismaService } from "@/prisma/prisma.service";
 
+// test/utils/prisma-reset.ts
 /**
  * PrismaService üzerinden Postgres'teki tüm tabloları truncate eder.
  * CASCADE ile bağlı tabloları da temizler, identity sequence'lerini resetler.

@@ -1,14 +1,14 @@
 import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { UpdateDraftEventDto } from "src/draft-events/dto/update-draft-event.dto";
+import { UpdateDraftEventDto } from "@/draft-events/dto/update-draft-event.dto";
 import * as request from 'supertest';
 import { EventCategory, Role } from "@prisma/client";
-import { TokenPayload } from "../../src/auth/token-payload.interface";
-import { CreateDraftEventDto } from "../../src/draft-events/dto/create-draft-event.dto";
-import { PrismaService } from "../../src/prisma/prisma.service";
-import { createTestUser } from "../../test/utils/test-helpers";
-import { DateUtils } from "../../src/common/date.utils";
-import { TestUtils } from "../../test/utils/test-utils";
+import { TokenPayload } from '@/auth/token-payload.interface';
+import { CreateDraftEventDto } from '@/draft-events/dto/create-draft-event.dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { DateUtils } from '@/common/date.utils';
+import { TestUtils } from "@test/utils/test-utils";
+import { createTestUser } from "@test/utils/test-helpers";
 
 const baseTokenPayload = { sub: 1, email: "example@gmail.com", role: Role.ORGANIZER }
 

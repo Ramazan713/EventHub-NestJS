@@ -9,6 +9,9 @@ export default {
         transform: {
             '^.+\\.(t|j)s$': 'ts-jest',
         },
+        moduleNameMapper: {
+            "^@/(.*)$": "<rootDir>/src/$1"
+        }
     },
     {
         displayName: 'e2e',
@@ -19,7 +22,8 @@ export default {
         },
         setupFilesAfterEnv: ["<rootDir>/test/utils/global-e2e-setup.ts"],
         moduleNameMapper: {
-            "^@/(.*)$": "<rootDir>/src/$1"
+            "^@/(.*)$": "<rootDir>/src/$1",
+            '^@test/(.*)$': '<rootDir>/test/$1'
         }
     },
   ],
