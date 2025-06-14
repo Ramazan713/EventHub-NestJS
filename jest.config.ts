@@ -1,3 +1,5 @@
+/** @jest-config-loader ts-node */
+/** @jest-config-loader-options {"transpileOnly": true} */
 
 export default {
   projects: [
@@ -24,7 +26,8 @@ export default {
         moduleNameMapper: {
             "^@/(.*)$": "<rootDir>/src/$1",
             '^@test/(.*)$': '<rootDir>/test/$1'
-        }
+        },
+        setupFiles: ["<rootDir>/test/utils/setup-env.ts"]
     },
   ],
 };

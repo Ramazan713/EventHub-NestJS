@@ -1,0 +1,30 @@
+# docker-compose.yml
+version: '3.9'
+services:
+  db:
+    image: postgres:15
+    container_name: eventhub_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: EventHub
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    profiles: ["dev"]
+
+  db_test:
+    image: postgres:15
+    container_name: eventhub_db_test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: EventHubTest
+    ports:
+      - "5433:5432"
+    profiles: ["test"]
+
+volumes:
+  db_data:
+  db_test_data:

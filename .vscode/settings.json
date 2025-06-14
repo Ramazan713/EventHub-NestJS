@@ -13,10 +13,10 @@
     },
     {
       "name": "e2e",                        
-      "rootPath": "test/e2e",               
-      "jestCommandLine": "npm run prisma:migrate:test && npx jest --selectProjects e2e --colors --runInBand",
+      "rootPath": ".",   
+      "jestCommandLine": "npm run test:db:up && npm run prisma:migrate:test && npx jest --selectProjects e2e --colors --runInBand",
       "runMode": "on-demand",              
-      "autoEnable": true             
+      "autoEnable": true         
     }
   ]
 }
