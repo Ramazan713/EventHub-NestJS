@@ -72,23 +72,9 @@ describe('EventParticipantsService', () => {
         currentParticipants: 5,
       } as any);
 
-      prisma.$transaction.mockImplementation(async (cb) => {
-        // Simulate transaction callback
-        const txn = {
-          eventParticipant: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-          event: {
-            update: jest.fn().mockResolvedValue({}),
-          },
-        };
-        return await cb(txn);
-      });
-
       await expect(service.register(eventId, userId)).resolves.toBeUndefined();
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-      // Optionally, check that create and update were called with correct args
     });
 
     it("should allow registration if event has no capacity limit", async () => {
@@ -102,22 +88,121 @@ describe('EventParticipantsService', () => {
         category: EventCategory.MEETUP,
       } as any);
 
-      prisma.$transaction.mockImplementation(async(cb) => {
+      await expect(service.register(eventId, userId)).resolves.toBeUndefined();
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+  });
+
+
+  describe("unregister", () => {
+    const eventId = 1;
+    const userId = 2;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should throw NotFoundException if event is not found", async () => {
+      prisma.event.findFirst.mockResolvedValue(null);
+
+      await expect(service.unregister(eventId, userId)).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw BadRequestException if user is not registered", async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        id: eventId,
+        isCancelled: false,
+        price: 0,
+        participants: [],
+        capacity: 10,
+        currentParticipants: 5,
+      } as any);
+
+      await expect(service.unregister(eventId, userId)).rejects.toThrow(BadRequestException);
+    });
+
+    it("should unregister user if all conditions are met", async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        id: eventId,
+        isCancelled: false,
+        price: 0,
+        participants: [{ userId, status: ParticipantStatus.REGISTERED }],
+        capacity: 10,
+        currentParticipants: 5,
+      } as any);
+
+      const updateEventSpy = jest.fn().mockResolvedValue({});
+      const updateParticipantSpy = jest.fn().mockResolvedValue({});
+
+      prisma.$transaction.mockImplementation(async (cb) => {
+        // Simulate transaction callback
         const txn = {
           eventParticipant: {
-            create: jest.fn().mockResolvedValue({}),
+            update: updateEventSpy,
           },
           event: {
-            update: jest.fn().mockResolvedValue({}),
+            update: updateParticipantSpy,
           },
         };
         return await cb(txn);
       });
 
-      await expect(service.register(eventId, userId)).resolves.toBeUndefined();
+      await expect(service.unregister(eventId, userId)).resolves.toBeUndefined();
+
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(updateEventSpy).toHaveBeenCalledWith({
+        where: {
+          userId_eventId: {
+            userId,
+            eventId,
+          },
+        },
+        data: {
+          status: ParticipantStatus.CANCELLED,
+        },
+      });
+      expect(updateParticipantSpy).toHaveBeenCalledWith({
+        where: {
+          id: eventId,
+        },
+        data: {
+          currentParticipants: {
+            decrement: 1,
+          },
+        },
+      })
     });
   });
+
+  describe("getParticipants", () => {
+    const eventId = 1;
+    const userId = 2;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should throw NotFoundException if event is not found", async () => {
+      prisma.event.findFirst.mockResolvedValue(null);
+
+      await expect(service.getParticipants(eventId, userId)).rejects.toThrow(NotFoundException);
+    });
+
+    it("should return participants if all conditions are met", async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        id: eventId,
+        isCancelled: false,
+        price: 0,
+        participants: [{ userId, status: ParticipantStatus.REGISTERED }],
+        capacity: 10,
+        currentParticipants: 5,
+      } as any);
+
+      const response = await service.getParticipants(eventId, userId);
+      expect(response).toHaveLength(1);
+    });
+  });
+
 });
 
 

@@ -39,21 +39,29 @@ export class EventParticipantsService {
         }
 
         await this.prisma.$transaction(async (txn) => {
-            await txn.eventParticipant.create({
-                data: {
+            await txn.eventParticipant.upsert({
+                where: {
+                    userId_eventId: {
+                        eventId,
+                        userId,
+                    }
+                },
+                create: {
                     eventId: event.id,
                     userId,
                     status: ParticipantStatus.REGISTERED
+                },
+                update: {
+                    status: ParticipantStatus.REGISTERED
                 }
             })
-
             await txn.event.update({
                 where: {
                     id: event.id
                 },
                 data: {
                     currentParticipants: { increment: 1 },
-                    participants: { connect: { id: userId } }
+                    participants: { connect: { userId_eventId: { userId, eventId } } }
                 }
             })
         })
@@ -65,11 +73,22 @@ export class EventParticipantsService {
                 id: eventId,
                 isCancelled: false,
                 price: 0
+            },
+            include: {
+                participants: {
+                    where: {
+                        status: ParticipantStatus.REGISTERED
+                    }
+                }
             }
         });
         if (!event) {
-            throw new BadRequestException("Event not found");
+            throw new NotFoundException("Event not found");
         }
+        if(!event.participants.map(participant => participant.userId).includes(userId)) {
+            throw new BadRequestException("User is not registered");
+        }
+
         await this.prisma.$transaction(async (txn) => {
             await txn.event.update({
                 where: {
@@ -111,7 +130,7 @@ export class EventParticipantsService {
             }
         });
         if (!event) {
-            throw new BadRequestException("Event not found");
+            throw new NotFoundException("Event not found");
         }
         return event.participants.map(participant => EventParticipantDto.fromEventParticipant(participant));
     }

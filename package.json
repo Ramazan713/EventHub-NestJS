@@ -18,7 +18,7 @@
     "test:cov": "jest --selectProjects unit --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "prisma:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
-    "test:e2e": "npm run prisma:migrate:test && jest --selectProjects e2e"
+    "test:e2e": "npm run prisma:migrate:test && jest --selectProjects e2e --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
