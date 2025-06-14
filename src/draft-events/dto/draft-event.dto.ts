@@ -1,5 +1,5 @@
 import { Exclude, Expose, plainToInstance } from "class-transformer"
-import { DraftEvent, EventCategory } from "../../../generated/prisma"
+import { DraftEvent, EventCategory } from "@prisma/client"
 
 @Exclude()
 export class DraftEventDto {

@@ -2,7 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UpdateDraftEventDto } from "src/draft-events/dto/update-draft-event.dto";
 import * as request from 'supertest';
-import { EventCategory, Role } from "../../generated/prisma";
+import { EventCategory, Role } from "@prisma/client";
 import { TokenPayload } from "../../src/auth/token-payload.interface";
 import { CreateDraftEventDto } from "../../src/draft-events/dto/create-draft-event.dto";
 import { PrismaService } from "../../src/prisma/prisma.service";

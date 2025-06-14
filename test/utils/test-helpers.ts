@@ -1,5 +1,4 @@
-import * as bcrypt from 'bcrypt';
-import { Role } from "../../generated/prisma";
+import { Role } from "@prisma/client";
 import { PrismaService } from "../../src/prisma/prisma.service";
 
 export async function createTestUser(

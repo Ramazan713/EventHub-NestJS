@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { DraftEventsService } from './draft-events.service';
 import { TokenPayload } from 'src/auth/token-payload.interface';
-import { DraftEvent, EventCategory, Role } from '../../generated/prisma';
+import { DraftEvent, EventCategory, Role } from '@prisma/client';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import * as moment from 'moment';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
