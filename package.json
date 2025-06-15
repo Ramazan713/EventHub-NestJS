@@ -8,11 +8,9 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-
     "prestart": "npm run dev:db:up && npm run prisma:migrate:dev",
     "start": "nest start",
     "poststart": "npm run dev:db:down",
-
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -21,12 +19,10 @@
     "test:watch": "jest --selectProjects unit --watch",
     "test:cov": "jest --selectProjects unit --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-   
     "dev:db:up": "docker-compose --profile dev up -d db",
     "dev:db:down": "docker-compose --profile dev down db",
     "test:db:up": "docker-compose --profile test up -d db_test",
     "test:db:down": "docker-compose --profile test down",
-
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "test:e2e": "npm run test:db:up && npm run prisma:migrate:test && jest --selectProjects e2e --runInBand && npm run test:db:down"
@@ -49,7 +45,8 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "stripe": "^18.2.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -67,6 +64,7 @@
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
+    "@types/stripe": "^8.0.416",
     "@types/supertest": "^6.0.2",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^8.0.0",

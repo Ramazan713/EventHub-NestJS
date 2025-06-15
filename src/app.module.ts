@@ -6,6 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { EventsModule } from './events/events.module';
 import { DraftEventsModule } from './draft-events/draft-events.module';
 import { EventParticipantsModule } from './event-participants/event-participants.module';
+import { TicketsModule } from './tickets/tickets.module';
+import { PaymentsModule } from './payments/payments.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -22,6 +24,8 @@ import * as Joi from 'joi';
     EventsModule,
     DraftEventsModule,
     EventParticipantsModule,
+    TicketsModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}
