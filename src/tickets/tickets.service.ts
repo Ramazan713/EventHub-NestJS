@@ -91,7 +91,7 @@ export class TicketsService {
                         id: paymentResult.eventId
                     },
                     data: {
-                        currentParticipants: { increment: 1 }
+                        currentParticipants: { increment: paymentResult.status === TicketStatus.BOOKED ? 1 : -1 }
                     }
                 })
 

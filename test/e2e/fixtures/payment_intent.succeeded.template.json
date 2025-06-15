@@ -1,0 +1,14 @@
+{
+  "id": "evt_1Example",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_1Example",
+      "object": "payment_intent",
+      "amount": 2000,
+      "currency": "usd",
+      "metadata": {}
+    }
+  }
+}

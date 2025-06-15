@@ -78,6 +78,7 @@ export class EventsController {
         return this.eventParticipantsService.getParticipants(eventId, user.sub);
     }
 
+    @HttpCode(201)
     @UseGuards(JwtAuthGuard)
     @Post(":id/tickets")
     async createTicket(
@@ -87,6 +88,7 @@ export class EventsController {
         return this.ticketsService.createTicket(eventId, user.sub);
     }
 
+    @HttpCode(200)
     @Post("webhook")
     async handlePayment(
         @Headers() headers: Record<string, string>,

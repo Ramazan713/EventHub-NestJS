@@ -25,6 +25,14 @@ services:
       - "5433:5432"
     profiles: ["test"]
 
+  stripe-mock:
+    image: stripe/stripe-mock:latest
+    container_name: stripe_mock
+    command: ["stripe-mock", "--port", "12111"]
+    ports:
+      - "12111:12111"
+    profiles: ["test"]
+
 volumes:
   db_data:
   db_test_data:

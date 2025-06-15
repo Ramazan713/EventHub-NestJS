@@ -15,7 +15,9 @@ beforeAll(async () => {
     imports: [AppModule],
   }).compile();
 
-  global.app = moduleFixture.createNestApplication();
+  global.app = moduleFixture.createNestApplication({
+    rawBody: true
+  });
   app.useGlobalPipes(new ValidationPipe({ 
     transform: true,
     transformOptions: { enableImplicitConversion: true },

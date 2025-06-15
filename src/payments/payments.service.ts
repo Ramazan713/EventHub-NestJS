@@ -9,12 +9,12 @@ import { PaymentResult } from './models/payment-result.model';
 @Injectable()
 export class PaymentsService {
 
-    private readonly stripe: Stripe
 
     constructor(
-        private configService: ConfigService
+        private configService: ConfigService,
+        private stripe: Stripe
     ){
-        this.stripe = new Stripe(configService.getOrThrow("STRIPE_SECRET_KEY"));
+      
     }
 
 
