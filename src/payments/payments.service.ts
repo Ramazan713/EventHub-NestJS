@@ -19,6 +19,10 @@ export class PaymentsService {
 
 
     async createCheckoutSession(event: Event, ticketId: number): Promise<CheckoutSession> {
+        const metadata = {
+            "ticketId": ticketId,
+            "eventId": event.id
+        }
         const session = await this.stripe.checkout.sessions.create({
             line_items: [
                 {
@@ -34,21 +38,16 @@ export class PaymentsService {
             ],
             success_url: "http://localhost:3000/",
             cancel_url: "http://localhost:3000/",
-            metadata: {
-                "ticketId": ticketId,
-                "eventId": event.id
-            },
+            metadata,
             mode: "payment",
             payment_intent_data: {
-                 metadata: {
-                    "ticketId": ticketId,
-                    "eventId": event.id
-                },
+                 metadata,
             }
         })
 
         return {
-            checkoutUrl: session.url
+            checkoutUrl: session.url,
+            paymentSessionId: session.id
         }
     }
 
@@ -69,15 +68,19 @@ export class PaymentsService {
                     return {
                         eventId: eventId,
                         ticketId: this.getTicketIdFromStripe(event.data.object.metadata),
-                        status: TicketStatus.BOOKED
+                        status: TicketStatus.BOOKED,
+                        paymentIntentId: event.data.object.id,
+                        err: null
                     }
                 case "payment_intent.payment_failed":
-                    console.log(event)
+                    console.log(JSON.stringify(event, null, 2));
                     console.log(`PaymentIntent for payment_failed`);
                     return {
                         eventId: this.getEventIdFromStripe(event.data.object.metadata),
                         ticketId: this.getTicketIdFromStripe(event.data.object.metadata),
-                        status: TicketStatus.CANCELLED
+                        status: TicketStatus.CANCELLED,
+                        paymentIntentId: event.data.object.id,
+                        err: event.data.object.last_payment_error?.message
                     }
                 default:
                     console.log(`Unhandled event type ${event.type}`);

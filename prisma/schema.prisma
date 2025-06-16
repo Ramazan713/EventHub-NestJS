@@ -25,7 +25,7 @@ model User {
   events       Event[]
   draftEvents  DraftEvent[]
   participants EventParticipant[]
-  tickets Ticket[]
+  tickets      Ticket[]
 }
 
 model Event {
@@ -50,7 +50,7 @@ model Event {
   draft   DraftEvent?
 
   participants EventParticipant[]
-  tickets Ticket[]
+  tickets      Ticket[]
 }
 
 model DraftEvent {
@@ -89,31 +89,35 @@ model EventParticipant {
   @@unique([userId, eventId])
 }
 
-
 model Ticket {
-  id                Int               @id @default(autoincrement())
-  userId            Int
-  eventId           Int
-  status            TicketStatus      @default(RESERVED)
-  priceAtPurchase   Float
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id               Int          @id @default(autoincrement())
+  userId           Int
+  eventId          Int
+  status           TicketStatus @default(RESERVED)
+  priceAtPurchase  Float
+  paymentIntentId  String?      @unique
+  paymentSessionId String?
 
-  user              User              @relation(fields: [userId], references: [id])
-  event             Event             @relation(fields: [eventId], references: [id])
+  paidAt       DateTime?
+  refundedAt   DateTime?
+  failedReason String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
 
   @@index([userId])
   @@index([eventId])
 }
 
 enum TicketStatus {
-  RESERVED   // Ödeme bekliyor veya rezerve edildi
-  BOOKED     // Ödeme tamamlandı, bilet kesin
-  CANCELLED  // Kullanıcı iptal etti veya ödeme başarısız oldu
-  REFUNDED   // İade edildi  
+  RESERVED // Ödeme bekliyor veya rezerve edildi
+  BOOKED // Ödeme tamamlandı, bilet kesin
+  CANCELLED // Kullanıcı iptal etti veya ödeme başarısız oldu
+  REFUNDED // İade edildi  
+  REFUND_FAILED
 }
-
-
 
 enum ParticipantStatus {
   REGISTERED

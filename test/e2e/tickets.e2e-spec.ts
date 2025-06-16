@@ -151,12 +151,15 @@ describe("Tickets", () => {
             const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {tickets: true}})
 
             expect(ticket).not.toBeNull()
-            expect(ticket?.status).toBe(TicketStatus.RESERVED)
-            expect(ticket?.priceAtPurchase).toBe(baseEvent.price)
+            expect(ticket!!.status).toBe(TicketStatus.RESERVED)
+            expect(ticket!!.priceAtPurchase).toBe(baseEvent.price)
             expect(event?.currentParticipants).toBe(1 + baseEvent.currentParticipants)
             expect(event?.tickets.length).toBe(1)
-            expect(event?.tickets[0].userId).toBe(baseTokenPayload.sub)
-            expect(event?.tickets[0].status).toBe(TicketStatus.RESERVED)
+            expect(ticket!!.userId).toBe(baseTokenPayload.sub)
+            expect(ticket!!.status).toBe(TicketStatus.RESERVED)
+            expect(ticket!!.paymentSessionId).not.toBeNull()
+            expect(ticket!!.paymentSessionId).toEqual(response.body.paymentSessionId)
+            expect(ticket!!.status).toBe(TicketStatus.RESERVED)
             expect(response.body).toHaveProperty("checkoutUrl")
         })
 
@@ -228,6 +231,8 @@ describe("Tickets", () => {
             const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
 
             expect(ticket?.status).toBe(TicketStatus.BOOKED)
+            expect(ticket?.paymentIntentId).not.toBeNull()
+            expect(ticket?.paidAt).not.toBeNull()
             expect(response.status).toBe(200)
         })
 
@@ -243,6 +248,8 @@ describe("Tickets", () => {
             const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
 
             expect(ticket?.status).toBe(TicketStatus.CANCELLED)
+            expect(ticket?.paymentIntentId).not.toBeNull()
+            expect(ticket?.paidAt).toBeNull()
             expect(response.status).toBe(200)
         })
 

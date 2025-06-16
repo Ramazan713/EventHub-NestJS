@@ -73,7 +73,16 @@ export class TicketsService {
                     }
                 }
             })
-            return await this.paymentsService.createCheckoutSession(event, ticket.id)
+            const session = await this.paymentsService.createCheckoutSession(event, ticket.id)
+            await txn.ticket.update({
+                where: {
+                    id: ticket.id
+                },
+                data: {
+                    paymentSessionId: session.paymentSessionId,
+                }
+            })
+            return session
         })
     }
 
@@ -101,7 +110,10 @@ export class TicketsService {
                         id: paymentResult.ticketId
                     },
                     data: {
-                        status: paymentResult.status
+                        status: paymentResult.status,
+                        paymentIntentId: paymentResult.paymentIntentId,
+                        paidAt: paymentResult.status === TicketStatus.BOOKED ? new Date() : null,
+                        failedReason: paymentResult.err,
                     }
                 })
             })
