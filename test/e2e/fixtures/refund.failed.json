@@ -1,0 +1,17 @@
+{
+  "id": "evt_test_refund_failed",
+  "object": "event",
+  "type": "refund.failed",
+  "data": {
+    "object": {
+      "id": "re_1P1yyyyyyy",
+      "object": "refund",
+      "amount": 5000,
+      "currency": "usd",
+      "payment_intent": "pi_1P1yyyyyyy",
+      "status": "failed",
+      "failure_reason": "expired_or_canceled_card",
+      "created": 1718532400
+    }
+  }
+}

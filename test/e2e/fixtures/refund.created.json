@@ -1,0 +1,17 @@
+{
+  "id": "evt_test_refund_created",
+  "object": "event",
+  "type": "refund.created",
+  "data": {
+    "object": {
+      "id": "re_1AbCdEfGhIjKlMnOp",
+      "object": "refund",
+      "amount": 5000,
+      "currency": "usd",
+      "payment_intent": "pi_1AbCdEfGhIjKlMnOp",
+      "status": "pending",                 
+      "reason": "requested_by_customer",
+      "created": 1718532400
+    }
+  }
+}

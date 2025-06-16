@@ -6,6 +6,7 @@ import { PaymentsService } from '@/payments/payments.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TicketStatus } from '@prisma/client';
 import { WebhookRequest } from '@/payments/models/webhook-request.model';
+import { PaymentEvenType } from '@/payments/enums/payment-even-type.enum';
 
 describe('TicketsService', () => {
   let service: TicketsService;
@@ -143,6 +144,59 @@ describe('TicketsService', () => {
     })
   })
 
+  describe("cancelTicket", () => {
+    const ticketId = 1;
+    const userId = 2;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should throw NotFoundException if ticket is not found", async () => {
+      prisma.ticket.findFirst.mockResolvedValue(null);
+
+      await expect(service.cancelTicket(ticketId, userId)).rejects.toThrow(NotFoundException);
+    })
+
+    it("should throw BadRequestException if paymentIntentId is null", async () => {
+      prisma.ticket.findFirst.mockResolvedValue({
+        id: ticketId,
+        userId,
+        status: TicketStatus.RESERVED,
+        paymentIntentId: null
+      } as any);
+
+      await expect(service.cancelTicket(ticketId, userId)).rejects.toThrow(BadRequestException);    
+    })
+
+    it("should throw BadRequestException if refundPayment throws error", async () => {
+      prisma.ticket.findFirst.mockResolvedValue({
+        id: ticketId,
+        userId,
+        status: TicketStatus.BOOKED,
+        paymentIntentId: "payment intent id"
+      } as any);
+
+      paymentService.refundPayment.mockRejectedValue(new Error())
+      await expect(service.cancelTicket(ticketId, userId)).rejects.toThrow(BadRequestException);
+    })
+
+    it("should cancel ticket", async () => {
+      prisma.ticket.findFirst.mockResolvedValue({
+        id: ticketId,
+        userId,
+        status: TicketStatus.BOOKED,
+        paymentIntentId: "payment intent id"
+      } as any);
+
+      await service.cancelTicket(ticketId, userId)
+      expect(paymentService.refundPayment).toHaveBeenCalledTimes(1);
+    })
+
+  })
+
+
+
   describe("handlePayment", () => {
     let webhookRequest: WebhookRequest
     
@@ -156,8 +210,13 @@ describe('TicketsService', () => {
       await service.handlePayment(webhookRequest)
       expect(prisma.$transaction).not.toHaveBeenCalled();
     })
-    it("should update event and ticket", async () => {
-      paymentService.parseWebhookRequest.mockResolvedValue({eventId: 1, ticketId: 1, status: TicketStatus.BOOKED})
+    it("should update event and ticket for charge type", async () => {
+      paymentService.parseWebhookRequest.mockResolvedValue({eventId: 1, ticketId: 1, status: TicketStatus.BOOKED, eventType: PaymentEvenType.CHARGE, paymentIntentId: "a"})
+      await service.handlePayment(webhookRequest)
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    })
+    it("should update event and ticket for refund type", async () => {
+      paymentService.parseWebhookRequest.mockResolvedValue({eventId: 1, ticketId: 1, status: TicketStatus.BOOKED, eventType: PaymentEvenType.REFUND, paymentIntentId: "a"})
       await service.handlePayment(webhookRequest)
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     })
@@ -165,6 +224,8 @@ describe('TicketsService', () => {
       paymentService.parseWebhookRequest.mockRejectedValue(new Error())
       await expect(service.handlePayment(webhookRequest)).rejects.toThrow(BadRequestException)
     })
+
+
 
   })
 

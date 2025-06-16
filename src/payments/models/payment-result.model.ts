@@ -1,10 +1,12 @@
 import { TicketStatus } from "@prisma/client"
+import { PaymentEvenType } from "../enums/payment-even-type.enum"
 
 
 export class PaymentResult {
-    eventId: number
-    ticketId: number
+    eventType: PaymentEvenType
+    eventId?: number
+    ticketId?: number
     status: TicketStatus
-    paymentIntentId: string
+    paymentIntentId?: string
     err?: string | null
 }

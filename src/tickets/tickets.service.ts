@@ -1,9 +1,10 @@
+import { PaymentEvenType } from '@/payments/enums/payment-even-type.enum';
 import { CheckoutSession } from '@/payments/models/checkout.model';
 import { WebhookRequest } from '@/payments/models/webhook-request.model';
 import { PaymentsService } from '@/payments/payments.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { TicketStatus } from '@prisma/client';
+import { Prisma, TicketStatus } from '@prisma/client';
 
 
 
@@ -65,7 +66,6 @@ export class TicketsService {
                     id: eventId
                 },
                 data: {
-                    currentParticipants: { increment: 1 },
                     tickets: {
                         connect: {
                             id: ticket.id
@@ -86,6 +86,29 @@ export class TicketsService {
         })
     }
 
+
+    async cancelTicket(ticketId: number, userId: number){   
+        const ticket = await this.prisma.ticket.findFirst({
+            where: {
+                id: ticketId,
+                userId,
+                status: TicketStatus.BOOKED
+            }
+        })
+        if(!ticket){
+            throw new NotFoundException("ticket not found")
+        }
+        const paymentIntentId = ticket.paymentIntentId
+        if(!paymentIntentId){
+            throw new BadRequestException("ticket is not paid")
+        }  
+        try {
+            return await this.paymentsService.refundPayment(paymentIntentId)
+        }catch(err){
+            throw new BadRequestException()
+        }
+    }
+
     async handlePayment(
         webhookRequest: WebhookRequest
     ){
@@ -94,31 +117,101 @@ export class TicketsService {
             if(!paymentResult){
                 return
             }
-            await this.prisma.$transaction(async (txn) => {
-                await txn.event.update({
-                    where: {
-                        id: paymentResult.eventId
-                    },
-                    data: {
-                        currentParticipants: { increment: paymentResult.status === TicketStatus.BOOKED ? 1 : -1 }
-                    }
-                })
+            const eventId = paymentResult.eventId
+            const ticketId = paymentResult.ticketId
+            const status = paymentResult.status
+            const paymentIntentId = paymentResult.paymentIntentId
+            const err = paymentResult.err
 
-                await txn.ticket.update({
-                    where: {
-                        eventId: paymentResult.eventId,
-                        id: paymentResult.ticketId
-                    },
-                    data: {
-                        status: paymentResult.status,
-                        paymentIntentId: paymentResult.paymentIntentId,
-                        paidAt: paymentResult.status === TicketStatus.BOOKED ? new Date() : null,
-                        failedReason: paymentResult.err,
-                    }
+            if(paymentResult.eventType === PaymentEvenType.CHARGE && eventId != null && ticketId != null && paymentIntentId != null){
+                await this.handlePaymentTicket({
+                    eventId, ticketId, status, paymentIntentId, err
                 })
-            })
+            }
+            if(paymentResult.eventType === PaymentEvenType.REFUND && paymentIntentId != null){
+                await this.handleRefundPayment({paymentIntentId, status, err})
+            }
         }catch(err){
             throw new BadRequestException()
         }
     }
+
+    private async handleRefundPayment({
+        paymentIntentId, status, err
+    }: {
+        paymentIntentId: string, 
+        status: TicketStatus,
+        err?: string | null
+    }){
+       
+        await this.prisma.$transaction(async (txn) => {
+             const ticketWhere: Prisma.TicketWhereUniqueInput = { paymentIntentId }
+            if(status === TicketStatus.REFUNDED){
+                ticketWhere.status = TicketStatus.BOOKED
+            }
+            const ticket = await txn.ticket.update({
+                where: ticketWhere,
+                data: {
+                    status: status,
+                    refundedAt: status === TicketStatus.REFUNDED ? new Date() : null,
+                    failedReason: err
+                }
+            })
+            await txn.event.update({
+                where: {
+                    id: ticket.eventId
+                },
+                data: {
+                    currentParticipants: { decrement: status === TicketStatus.REFUNDED ? 1 : 0 }
+                }
+            })
+        })
+    }
+
+    private async handlePaymentTicket({
+        eventId, ticketId, status, err, paymentIntentId
+    }: {
+        eventId: number,
+        ticketId: number,
+        status: TicketStatus,
+        paymentIntentId: string,
+        err?: string | null
+    }){
+        await this.prisma.$transaction(async (txn) => {
+            const ticket = await txn.ticket.findFirst({
+                where: {
+                    eventId: eventId,
+                    id: ticketId
+                }
+            })
+            if(!ticket) throw new NotFoundException("ticket not found")
+            let increment = status === TicketStatus.BOOKED ? 1 : 0
+            if(ticket.status === status){
+                increment = 0
+            }
+
+            await txn.event.update({
+                where: {
+                    id: eventId
+                },
+                data: {
+                    currentParticipants: { increment }
+                }
+            })
+
+            await txn.ticket.update({
+                where: {
+                    eventId: eventId,
+                    id: ticketId
+                },
+                data: {
+                    status: status,
+                    paymentIntentId: paymentIntentId,
+                    paidAt: status === TicketStatus.BOOKED ? new Date() : null,
+                    failedReason: err,
+                }
+            })
+        })
+    }
+
 }
