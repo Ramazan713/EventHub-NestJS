@@ -5,6 +5,8 @@ import { PaymentsService } from '@/payments/payments.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
+import { TicketWithEventResponseDto } from './dto/ticket-with-event-response.dto';
+import { TicketWithUserResponseDto } from './dto/ticket-with-user.response.dto';
 
 
 
@@ -16,6 +18,47 @@ export class TicketsService {
         private paymentsService: PaymentsService
     ){}
 
+
+    async getUserTicketById(ticketId: number, userId: number): Promise<TicketWithEventResponseDto> {
+        const ticket = await this.prisma.ticket.findFirst({
+            where: {id: ticketId, userId},
+            include: {
+                event: {
+                    include: {
+                        organizer: true
+                    }
+                }
+            }
+        })
+        if(!ticket){
+            throw new NotFoundException("ticket not found")
+        }
+        return TicketWithEventResponseDto.from(ticket, ticket.event, ticket.event.organizer)
+    }
+
+    async getUserTickets(userId: number): Promise<TicketWithEventResponseDto[]> {
+        const tickets = await this.prisma.ticket.findMany({
+            where: {userId},
+            include: {
+                event: {
+                    include: {
+                        organizer: true
+                    }
+                }
+            }
+        })
+        return tickets.map(ticket => TicketWithEventResponseDto.from(ticket, ticket.event, ticket.event.organizer))
+    }
+
+    async getEventTickets(eventId: number, organizerId: number): Promise<TicketWithUserResponseDto[]> {
+        const tickets = await this.prisma.ticket.findMany({
+            where: {eventId},
+            include: {
+                user: true
+            }
+        })
+        return tickets.map(ticket => TicketWithUserResponseDto.from(ticket, ticket.user))
+    }
 
     async createTicket(eventId: number, userId: number): Promise<CheckoutSession> {
         const event = await this.prisma.event.findFirst({

@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '@/prisma/prisma.service';
 import { ParticipantStatus } from '@prisma/client';
 import { EventParticipantDto } from './dto/event-participant.dto';
+import { ParticipantWithUserResponseDto } from './dto/participant-with-user-response.dto';
+import { ParticipantWithEventResponseDto } from './dto/participant-with-event-response.dto';
 
 @Injectable()
 export class EventParticipantsService {
@@ -113,26 +115,45 @@ export class EventParticipantsService {
         })
     }
 
-    async getParticipants(eventId: number, userId: number): Promise<EventParticipantDto[]> {
+    async getRegisteredParticipants(eventId: number, organizerId: number): Promise<ParticipantWithUserResponseDto[]> {
         const event = await this.prisma.event.findFirst({
             where: {
                 id: eventId,
+                organizerId,
                 isCancelled: false,
-                organizerId: userId,
-                price: 0,
             },
             include: {
                 participants: {
                     where: {
                         status: ParticipantStatus.REGISTERED
+                    },
+                    include: {
+                        user: true
                     }
-                }
+                },
             }
         });
         if (!event) {
             throw new NotFoundException("Event not found");
         }
-        return event.participants.map(participant => EventParticipantDto.fromEventParticipant(participant));
+        return event.participants.map(participant => ParticipantWithUserResponseDto.from(participant, participant.user));
+    }
+
+    async getUserParticipants(userId: number): Promise<ParticipantWithEventResponseDto[]> {
+        const eventParticipants = await this.prisma.eventParticipant.findMany({
+            where: {
+                userId,
+                status: ParticipantStatus.REGISTERED
+            },
+            include: {
+                event: {
+                    include: {
+                        organizer: true
+                    }
+                }
+            }
+        });
+        return eventParticipants.map(participant => ParticipantWithEventResponseDto.from(participant, participant.event, participant.event.organizer));
     }
 
 }

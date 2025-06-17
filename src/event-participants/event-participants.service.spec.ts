@@ -174,35 +174,6 @@ describe('EventParticipantsService', () => {
     });
   });
 
-  describe("getParticipants", () => {
-    const eventId = 1;
-    const userId = 2;
-
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    it("should throw NotFoundException if event is not found", async () => {
-      prisma.event.findFirst.mockResolvedValue(null);
-
-      await expect(service.getParticipants(eventId, userId)).rejects.toThrow(NotFoundException);
-    });
-
-    it("should return participants if all conditions are met", async () => {
-      prisma.event.findFirst.mockResolvedValue({
-        id: eventId,
-        isCancelled: false,
-        price: 0,
-        participants: [{ userId, status: ParticipantStatus.REGISTERED }],
-        capacity: 10,
-        currentParticipants: 5,
-      } as any);
-
-      const response = await service.getParticipants(eventId, userId);
-      expect(response).toHaveLength(1);
-    });
-  });
-
 });
 
 

@@ -10,6 +10,7 @@ import { TicketsModule } from '@/tickets/tickets.module';
     TicketsModule
   ],
   providers: [EventsService],
-  controllers: [EventsController]
+  controllers: [EventsController],
+  exports: [EventsService]
 })
 export class EventsModule {}

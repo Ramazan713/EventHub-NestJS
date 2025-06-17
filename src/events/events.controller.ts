@@ -30,7 +30,7 @@ export class EventsController {
     async getEvents(
         @CurrentUser() user: TokenPayload
     ): Promise<EventDto[]> {
-        return this.eventsService.getEvents(user.sub);
+        return this.eventsService.getEventsByOwner(user.sub);
     }
 
    
@@ -75,7 +75,7 @@ export class EventsController {
         @CurrentUser() user: TokenPayload,
         @Param("id") eventId: number
     ){
-        return this.eventParticipantsService.getParticipants(eventId, user.sub);
+        return this.eventParticipantsService.getRegisteredParticipants(eventId, user.sub);
     }
 
     @HttpCode(201)
@@ -86,6 +86,17 @@ export class EventsController {
         @Param("id") eventId: number
     ){
         return this.ticketsService.createTicket(eventId, user.sub);
+    }
+
+    @UseGuards(RolesGuard)
+    @Roles(Role.ORGANIZER, Role.ADMIN)
+    @UseGuards(JwtAuthGuard)
+    @Get(":id/tickets")
+    async getTickets(
+        @CurrentUser() user: TokenPayload,
+        @Param("id") eventId: number
+    ){
+        return this.ticketsService.getEventTickets(eventId, user.sub);
     }
 
     @HttpCode(200)

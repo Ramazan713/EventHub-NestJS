@@ -245,15 +245,6 @@ describe("Events", () => {
             const response = await execute(eventId)
             expect(response.status).toBe(404)
         })
-
-        it("should throw NotFoundException if price is not free", async () => {
-            await createUserAndToken()
-            await createEventAndRegisterRandomUser({price: 1})
-            const response = await execute(eventId)
-            expect(response.status).toBe(404)
-        })
-
-
     })
 
 });
