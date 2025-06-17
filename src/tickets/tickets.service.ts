@@ -4,7 +4,7 @@ import { WebhookRequest } from '@/payments/models/webhook-request.model';
 import { PaymentsService } from '@/payments/payments.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, TicketStatus } from '@prisma/client';
+import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
 
 
 
@@ -165,6 +165,23 @@ export class TicketsService {
                     currentParticipants: { decrement: status === TicketStatus.REFUNDED ? 1 : 0 }
                 }
             })
+
+            await txn.eventParticipant.upsert({
+                where: {
+                    userId_eventId: {
+                        eventId: ticket.eventId,
+                        userId: ticket.userId
+                    }
+                },
+                update: {
+                    status: ParticipantStatus.CANCELLED
+                },
+                create: {
+                    eventId: ticket.eventId,
+                    userId: ticket.userId,
+                    status: ParticipantStatus.CANCELLED,
+                }
+            })
         })
     }
 
@@ -209,6 +226,26 @@ export class TicketsService {
                     paymentIntentId: paymentIntentId,
                     paidAt: status === TicketStatus.BOOKED ? new Date() : null,
                     failedReason: err,
+                }
+            })
+
+
+            const eventParticipantStatus = status === TicketStatus.BOOKED ? ParticipantStatus.REGISTERED : ParticipantStatus.CANCELLED
+            await txn.eventParticipant.upsert({
+                where: {
+                    userId_eventId: {
+                        eventId: ticket.eventId,
+                        userId: ticket.userId
+                    }
+                },
+                update: {
+                    status: eventParticipantStatus
+                },
+                create: {
+                    eventId: ticket.eventId,
+                    userId: ticket.userId,
+                    status: eventParticipantStatus,
+                    registeredAt: new Date()
                 }
             })
         })

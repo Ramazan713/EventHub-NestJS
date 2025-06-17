@@ -3,7 +3,7 @@ import { DateUtils } from '@/common/date.utils';
 import { PrismaService } from '@/prisma/prisma.service';
 import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { Event, EventCategory, Role, Ticket, TicketStatus, User } from "@prisma/client";
+import { Event, EventCategory, ParticipantStatus, Role, Ticket, TicketStatus, User } from "@prisma/client";
 import { PaymentTestUtils } from '@test/utils/payment.utilts';
 import { createTestUser } from "@test/utils/test-helpers";
 import Stripe from 'stripe';
@@ -308,121 +308,166 @@ describe("Tickets", () => {
                 .send(payload)
         }
 
-        it("should update ticket status to BOOKED when payment is successful", async() => {
-            await createBaseTicket()
-            const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
-            const response = await execute(baseSuccessPayload)
-            const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
+        describe("payment.success", () => {
+            it("should update ticket status to BOOKED when payment is successful", async() => {
+                await createBaseTicket()
+                const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                const response = await execute(baseSuccessPayload)
+                const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
 
-            expect(ticket?.status).toBe(TicketStatus.BOOKED)
-            expect(ticket?.paymentIntentId).not.toBeNull()
-            expect(ticket?.paidAt).not.toBeNull()
-            expect(response.status).toBe(200)
+                expect(ticket?.status).toBe(TicketStatus.BOOKED)
+                expect(ticket?.paymentIntentId).not.toBeNull()
+                expect(ticket?.paidAt).not.toBeNull()
+                expect(response.status).toBe(200)
+            })
+
+            it("should create event participant when payment is successful", async() => {
+                await createBaseTicket()
+                const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                await execute(baseSuccessPayload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {participants: true}})
+                expect(event?.participants.length).toBe(1)
+                expect(event?.participants[0].userId).toBe(baseUser.id)
+                expect(event?.participants[0].status).toBe(ParticipantStatus.REGISTERED)
+            })
+
+            it("when payment.success is called twice, should increment event participants once", async() => {
+                await createBaseTicket()
+                const payload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                const response = await execute(payload)
+                await execute(payload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
+
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants + 1)
+                expect(response.status).toBe(200)
+            })
+
+            it("should increment event participants when payment is successful", async() => {
+                await createBaseTicket()
+                const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                const response = await execute(baseSuccessPayload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
+                expect(event?.currentParticipants).toBe(1 + baseEvent.currentParticipants)
+                expect(response.status).toBe(200)
+            })
         })
 
-        it("when payment.success is called twice, should increment event participants once", async() => {
-            await createBaseTicket()
-            const payload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
-            const response = await execute(payload)
-            await execute(payload)
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
+        describe("payment.failed", () => {
+            it("should update ticket status to CANCELLED when payment is failed", async() => {
+                await createBaseTicket()
+                const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                const response = await execute(baseFailedPayload)
+                const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
 
-            expect(event?.currentParticipants).toBe(baseEvent.currentParticipants + 1)
-            expect(response.status).toBe(200)
+                expect(ticket?.status).toBe(TicketStatus.CANCELLED)
+                expect(ticket?.paymentIntentId).not.toBeNull()
+                expect(ticket?.paidAt).toBeNull()
+                expect(response.status).toBe(200)
+            })
+
+            it("should decrese event participants when payment is failed", async() => {
+                await createBaseTicket()
+                const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                const response = await execute(baseFailedPayload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants)
+                expect(response.status).toBe(200)
+            })
+
+            it("should cancel event participants when payment is failed", async() => {
+                await createBaseTicket()
+                const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
+                const response = await execute(baseFailedPayload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {participants: true}})
+                expect(event?.participants.length).toBe(1)
+                expect(event?.participants[0].status).toBe(ParticipantStatus.CANCELLED)
+                expect(response.status).toBe(200)
+            })
+
+            it("should throw BadRequestException if ticket not found", async() => {
+                await createBaseTicket()
+                const response = await execute(PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id + 1, eventId: baseEventId}))
+                expect(response.status).toBe(400)
+            })
         })
 
-        it("should increment event participants when payment is successful", async() => {
-            await createBaseTicket()
-            const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
-            const response = await execute(baseSuccessPayload)
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
-            expect(event?.currentParticipants).toBe(1 + baseEvent.currentParticipants)
-            expect(response.status).toBe(200)
+        describe("refund.created", () => {
+            it("should update ticket status to REFUNDED when refund is successful", async() => {
+                await createBaseTicket({status: TicketStatus.BOOKED})
+                const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
+                const response = await execute(payload)
+                const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
+
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants - 1)
+                expect(ticket?.status).toBe(TicketStatus.REFUNDED)
+                expect(ticket?.refundedAt).not.toBeNull()
+                expect(response.status).toBe(200)
+            })
+
+            it("should cancel event participants when refund is successful", async() => {
+                await createBaseTicket({status: TicketStatus.BOOKED})
+                const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
+                await execute(payload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {participants: true}})
+                expect(event?.participants.length).toBe(1)
+                expect(event?.participants[0].status).toBe(ParticipantStatus.CANCELLED)
+            })
+
+            it("should decrease current participants once when refund is called twice", async() => {
+                await createBaseTicket({status: TicketStatus.BOOKED})
+                const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
+                await execute(payload)
+                await execute(payload)
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
+
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants - 1)
+            })
+
+            it("should throw BadRequestException if REFUNDED ticket status is not BOOKED", async() => {
+                await createBaseTicket({status: TicketStatus.RESERVED})
+                const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
+                const response = await execute(payload)
+                expect(response.status).toBe(400)
+            })
         })
 
-        it("should update ticket status to CANCELLED when payment is failed", async() => {
-            await createBaseTicket()
-            const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
-            const response = await execute(baseFailedPayload)
-            const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
+        describe("refund.failed", () => {
+            it("should update ticket status to REFUND_FAILED when refund is failed", async() => {
+                await createBaseTicket({status: TicketStatus.REFUNDED})
+                const payload = PaymentTestUtils.getRefundFailedPayload(basePaymentIntentId)
+                const response = await execute(payload)
+                const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
 
-            expect(ticket?.status).toBe(TicketStatus.CANCELLED)
-            expect(ticket?.paymentIntentId).not.toBeNull()
-            expect(ticket?.paidAt).toBeNull()
-            expect(response.status).toBe(200)
-        })
+                expect(ticket?.status).toBe(TicketStatus.REFUND_FAILED)
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants)
+                expect(ticket?.refundedAt).toBeNull()
+                expect(response.status).toBe(200)
+            })
 
-        it("should decrese event participants when payment is failed", async() => {
-            await createBaseTicket()
-            const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
-            const response = await execute(baseFailedPayload)
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
-            expect(event?.currentParticipants).toBe(baseEvent.currentParticipants)
-            expect(response.status).toBe(200)
-        })
+            it("should update ticket status to REFUND_FAILED when refund is failed and ticket status is not REFUNDED", async() => {
+                await createBaseTicket({status: TicketStatus.CANCELLED})
+                const payload = PaymentTestUtils.getRefundFailedPayload(basePaymentIntentId)
+                const response = await execute(payload)
+                const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
 
-        it("should throw BadRequestException if ticket not found", async() => {
-            await createBaseTicket()
-            const response = await execute(PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id + 1, eventId: baseEventId}))
-            expect(response.status).toBe(400)
+                expect(response.status).toBe(200)
+                expect(ticket?.status).toBe(TicketStatus.REFUND_FAILED)
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants)
+                expect(ticket?.refundedAt).toBeNull()
+            })
         })
 
         
-        it("should update ticket status to REFUNDED when refund is successful", async() => {
-            await createBaseTicket({status: TicketStatus.BOOKED})
-            const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
-            const response = await execute(payload)
-            const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
 
-            expect(event?.currentParticipants).toBe(baseEvent.currentParticipants - 1)
-            expect(ticket?.status).toBe(TicketStatus.REFUNDED)
-            expect(ticket?.refundedAt).not.toBeNull()
-            expect(response.status).toBe(200)
-        })
+        
 
-         it("should decrease current participants once when refund is called twice", async() => {
-            await createBaseTicket({status: TicketStatus.BOOKED})
-            const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
-            await execute(payload)
-            await execute(payload)
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
+        
+        
 
-            expect(event?.currentParticipants).toBe(baseEvent.currentParticipants - 1)
-        })
-
-        it("should throw BadRequestException if REFUNDED ticket status is not BOOKED", async() => {
-            await createBaseTicket({status: TicketStatus.RESERVED})
-            const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
-            const response = await execute(payload)
-            expect(response.status).toBe(400)
-        })
-
-        it("should update ticket status to REFUND_FAILED when refund is failed", async() => {
-            await createBaseTicket({status: TicketStatus.REFUNDED})
-            const payload = PaymentTestUtils.getRefundFailedPayload(basePaymentIntentId)
-            const response = await execute(payload)
-            const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
-
-            expect(ticket?.status).toBe(TicketStatus.REFUND_FAILED)
-            expect(event?.currentParticipants).toBe(baseEvent.currentParticipants)
-            expect(ticket?.refundedAt).toBeNull()
-            expect(response.status).toBe(200)
-        })
-
-        it("should update ticket status to REFUND_FAILED when refund is failed and ticket status is not REFUNDED", async() => {
-            await createBaseTicket({status: TicketStatus.CANCELLED})
-            const payload = PaymentTestUtils.getRefundFailedPayload(basePaymentIntentId)
-            const response = await execute(payload)
-            const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
-            const event = await prisma.event.findFirst({where: {id: baseEventId}})
-
-            expect(response.status).toBe(200)
-            expect(ticket?.status).toBe(TicketStatus.REFUND_FAILED)
-            expect(event?.currentParticipants).toBe(baseEvent.currentParticipants)
-            expect(ticket?.refundedAt).toBeNull()
-        })
+        
 
         
     })
