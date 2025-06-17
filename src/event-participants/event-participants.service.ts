@@ -1,9 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ParticipantStatus } from '@prisma/client';
-import { EventParticipantDto } from './dto/event-participant.dto';
-import { ParticipantWithUserResponseDto } from './dto/participant-with-user-response.dto';
-import { ParticipantWithEventResponseDto } from './dto/participant-with-event-response.dto';
+import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
+import { EventParticipantDetailResponseDto } from './dto/event-participant-detail-response.dto';
 
 @Injectable()
 export class EventParticipantsService {
@@ -115,7 +114,7 @@ export class EventParticipantsService {
         })
     }
 
-    async getRegisteredParticipants(eventId: number, organizerId: number): Promise<ParticipantWithUserResponseDto[]> {
+    async getRegisteredParticipants(eventId: number, organizerId: number): Promise<EventParticipantDetailResponseDto[]> {
         const event = await this.prisma.event.findFirst({
             where: {
                 id: eventId,
@@ -136,10 +135,10 @@ export class EventParticipantsService {
         if (!event) {
             throw new NotFoundException("Event not found");
         }
-        return event.participants.map(participant => ParticipantWithUserResponseDto.from(participant, participant.user));
+        return event.participants.map(participant => mapToDto(EventParticipantDetailResponseDto, participant));
     }
 
-    async getUserParticipants(userId: number): Promise<ParticipantWithEventResponseDto[]> {
+    async getUserParticipants(userId: number): Promise<EventParticipantDetailResponseDto[]> {
         const eventParticipants = await this.prisma.eventParticipant.findMany({
             where: {
                 userId,
@@ -153,7 +152,7 @@ export class EventParticipantsService {
                 }
             }
         });
-        return eventParticipants.map(participant => ParticipantWithEventResponseDto.from(participant, participant.event, participant.event.organizer));
+        return eventParticipants.map(participant => mapToDto(EventParticipantDetailResponseDto, participant));
     }
 
 }

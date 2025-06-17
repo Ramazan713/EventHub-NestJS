@@ -1,8 +1,7 @@
-import { Ticket, TicketStatus } from "@prisma/client"
-import { Exclude, Expose, plainToClass } from "class-transformer"
+import { TicketStatus } from "@prisma/client"
+import { Expose } from "class-transformer"
 
 
-@Exclude()
 export class TicketDto {
     @Expose()
     id: number
@@ -36,9 +35,4 @@ export class TicketDto {
     
     @Expose()
     paidAt?: Date
-
-
-    static fromTicket(ticket: Ticket) {
-        return plainToClass(TicketDto, ticket, { excludeExtraneousValues: true })
-    }
 }

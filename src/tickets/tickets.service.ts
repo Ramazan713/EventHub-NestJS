@@ -1,3 +1,4 @@
+import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { PaymentEvenType } from '@/payments/enums/payment-even-type.enum';
 import { CheckoutSession } from '@/payments/models/checkout.model';
 import { WebhookRequest } from '@/payments/models/webhook-request.model';
@@ -5,8 +6,7 @@ import { PaymentsService } from '@/payments/payments.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
-import { TicketWithEventResponseDto } from './dto/ticket-with-event-response.dto';
-import { TicketWithUserResponseDto } from './dto/ticket-with-user.response.dto';
+import { TicketWithDetailResponseDto } from './dto/ticket-with-detail-response.dto';
 
 
 
@@ -19,24 +19,21 @@ export class TicketsService {
     ){}
 
 
-    async getUserTicketById(ticketId: number, userId: number): Promise<TicketWithEventResponseDto> {
+    async getUserTicketById(ticketId: number, userId: number): Promise<TicketWithDetailResponseDto> {
         const ticket = await this.prisma.ticket.findFirst({
             where: {id: ticketId, userId},
             include: {
-                event: {
-                    include: {
-                        organizer: true
-                    }
-                }
+                event: true,
+                user: true
             }
         })
         if(!ticket){
             throw new NotFoundException("ticket not found")
         }
-        return TicketWithEventResponseDto.from(ticket, ticket.event, ticket.event.organizer)
+        return mapToDto(TicketWithDetailResponseDto, ticket)
     }
 
-    async getUserTickets(userId: number): Promise<TicketWithEventResponseDto[]> {
+    async getUserTickets(userId: number): Promise<TicketWithDetailResponseDto[]> {
         const tickets = await this.prisma.ticket.findMany({
             where: {userId},
             include: {
@@ -47,17 +44,17 @@ export class TicketsService {
                 }
             }
         })
-        return tickets.map(ticket => TicketWithEventResponseDto.from(ticket, ticket.event, ticket.event.organizer))
+        return tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
     }
 
-    async getEventTickets(eventId: number, organizerId: number): Promise<TicketWithUserResponseDto[]> {
+    async getEventTickets(eventId: number, organizerId: number): Promise<TicketWithDetailResponseDto[]> {
         const tickets = await this.prisma.ticket.findMany({
             where: {eventId},
             include: {
                 user: true
             }
         })
-        return tickets.map(ticket => TicketWithUserResponseDto.from(ticket, ticket.user))
+        return tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
     }
 
     async createTicket(eventId: number, userId: number): Promise<CheckoutSession> {

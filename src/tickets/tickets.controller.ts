@@ -2,7 +2,7 @@ import { CurrentUser } from '@/auth/current-user.decorator';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { TokenPayload } from '@/auth/token-payload.interface';
 import { Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
-import { TicketWithEventResponseDto } from './dto/ticket-with-event-response.dto';
+import { TicketWithDetailResponseDto } from './dto/ticket-with-detail-response.dto';
 import { TicketsService } from './tickets.service';
 
 @UseGuards(JwtAuthGuard)
@@ -15,7 +15,7 @@ export class TicketsController {
 
 
     @Get()
-    async getUserTickets(@CurrentUser() user: TokenPayload): Promise<TicketWithEventResponseDto[]> {
+    async getUserTickets(@CurrentUser() user: TokenPayload): Promise<TicketWithDetailResponseDto[]> {
         return this.ticketsService.getUserTickets(user.sub);
     }
 
@@ -23,7 +23,7 @@ export class TicketsController {
     async getUserTicketById(
         @Param("id") ticketId: number,
         @CurrentUser() user: TokenPayload
-    ): Promise<TicketWithEventResponseDto> {
+    ): Promise<TicketWithDetailResponseDto> {
         return this.ticketsService.getUserTicketById(ticketId, user.sub);
     }
 

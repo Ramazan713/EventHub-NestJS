@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
+import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { UserDto } from '@/users/dto/user.dto';
 import { UsersService } from '@/users/users.service';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { SignUpRequestDto } from './dto/signup-request.dto';
 import { TokenPayload } from './token-payload.interface';
@@ -53,7 +54,7 @@ export class AuthService {
         if(!passwordMatch){
             throw new UnauthorizedException("user not found or credentials are incorrect")
         } 
-        return UserDto.fromUser(user)
+        return mapToDto(UserDto, user)
     }
 
 

@@ -1,15 +1,20 @@
-import { Expose, plainToClass } from "class-transformer";
-import { EventParticipant, ParticipantStatus } from "@prisma/client";
+import { ParticipantStatus } from "@prisma/client";
+import { Expose } from "class-transformer";
 
-@Expose()
+
 export class EventParticipantDto {
+    @Expose()
     id: number;
-    eventId: number;
-    userId: number;
-    status: ParticipantStatus;
-    registeredAt: Date;
 
-    static fromEventParticipant(eventParticipant: EventParticipant): EventParticipantDto {
-        return plainToClass(EventParticipantDto, eventParticipant)
-    }
+    @Expose()
+    eventId: number;
+
+    @Expose()
+    userId: number;
+
+    @Expose()
+    status: ParticipantStatus;
+
+    @Expose()
+    registeredAt: Date;
 }

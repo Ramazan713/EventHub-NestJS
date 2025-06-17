@@ -1,5 +1,5 @@
-import { Event, EventCategory, User } from "@prisma/client"
-import { Exclude, Expose, plainToClass } from "class-transformer"
+import { EventCategory } from "@prisma/client"
+import { Expose, Type } from "class-transformer"
 import { UserInfoDto } from "./user-info.dto"
 
 
@@ -31,14 +31,7 @@ export class EventInfoDto {
     @Expose()
     location?: string
 
-    static fromEvent(event: Event, organizer?: User): EventInfoDto & {organizer?: UserInfoDto} {
-        const eventDto = plainToClass(EventInfoDto, event, { excludeExtraneousValues: true })
-        if(organizer){
-            return {
-                ...eventDto,
-                organizer: UserInfoDto.fromUser(organizer)
-            }
-        }
-        return eventDto
-    }
+    @Expose()
+    @Type(() => UserInfoDto)
+    organizer?: UserInfoDto
 }

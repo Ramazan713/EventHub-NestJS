@@ -1,6 +1,7 @@
+import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
+import { PrismaService } from '@/prisma/prisma.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { PrismaService } from '@/prisma/prisma.service';
 import { UserDto } from './dto/user.dto';
 
 @Injectable()
@@ -21,7 +22,7 @@ export class UsersService {
         if(!user){
             throw new NotFoundException("user not found")
         }
-        return UserDto.fromUser(user)
+        return mapToDto(UserDto, user)
     }
 
     async createUser(email: string, passwordHash: string): Promise<UserDto>{
@@ -30,7 +31,7 @@ export class UsersService {
                 email, passwordHash
             }
         })
-        return UserDto.fromUser(user)
+        return mapToDto(UserDto, user)
     }
 
 }

@@ -1,8 +1,8 @@
 
-import { Exclude, Expose, plainToInstance } from 'class-transformer';
-import { Role, User } from '@prisma/client';
+import { Role } from '@prisma/client';
+import { Expose } from 'class-transformer';
 
-@Exclude()
+
 export class UserDto {
   @Expose()
   id: number;
@@ -19,7 +19,4 @@ export class UserDto {
   @Expose()
   createdAt: Date;
 
-  static fromUser(user: User): UserDto {
-    return plainToInstance(UserDto, user)
-  }
 }

@@ -7,6 +7,7 @@ import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 import { EventDto } from '@/events/dto/event.dto';
 import { pick } from 'lodash';
 import { DateUtils } from '@/common/date.utils';
+import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 
 @Injectable()
 export class DraftEventsService {
@@ -123,7 +124,7 @@ export class DraftEventsService {
             return event
         })
 
-        return EventDto.fromEvent(result);
+        return mapToDto(EventDto, result)
     }
 
     async createDraftFromEvent(tokenPayload: TokenPayload, eventId: number): Promise<DraftEventDto> {

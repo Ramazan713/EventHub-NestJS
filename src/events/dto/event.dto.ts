@@ -1,7 +1,7 @@
-import { Exclude, Expose, plainToInstance } from "class-transformer"
-import { Event, EventCategory } from "@prisma/client"
+import { EventCategory } from "@prisma/client"
+import { Expose } from "class-transformer"
 
-@Exclude()
+
 export class EventDto {
 
     @Expose()
@@ -45,8 +45,4 @@ export class EventDto {
 
     @Expose()
     organizerId: number
-
-    static fromEvent(event: Event): EventDto {
-        return plainToInstance(EventDto, event)
-      }
 }

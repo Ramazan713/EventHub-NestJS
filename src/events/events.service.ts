@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { EventDto } from './dto/event.dto';
-import * as moment from 'moment';
 import { EventInfoDto } from '@/common/dto/event-info.dto';
+import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 
 @Injectable()
 export class EventsService {
@@ -19,7 +19,7 @@ export class EventsService {
                 date: "asc"
             }
         });
-        return events.map(event => EventDto.fromEvent(event));
+        return events.map(event => mapToDto(EventDto, event));
     }
 
 
@@ -40,7 +40,7 @@ export class EventsService {
                 date: "asc"
             }
         });
-        return events.map(event => EventInfoDto.fromEvent(event, event.organizer));
+        return events.map(event => mapToDto(EventInfoDto, event));
     }
 
     async cancelEvent(organizerId: number, eventId: number): Promise<EventDto> {
@@ -70,7 +70,7 @@ export class EventsService {
             })
             return event
         })
-        return EventDto.fromEvent(event)
+        return mapToDto(EventDto, event);
     }
 
 }
