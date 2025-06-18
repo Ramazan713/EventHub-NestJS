@@ -1,4 +1,6 @@
+import { DateUtils } from '@/common/date.utils';
 import { PrismaService } from '@/prisma/prisma.service';
+import { GetUserTicketsQueryDto } from '@/tickets/dto/get-user-tickets-query.dto';
 import { INestApplication } from "@nestjs/common";
 import { Event, ParticipantStatus, Prisma, Ticket, TicketStatus, User } from "@prisma/client";
 import { E2eHelper } from '@test/utils/e2e-helper';
@@ -406,4 +408,95 @@ describe("Tickets", () => {
 
         
     })
+
+
+    describe("getUserTickets", () => {
+        let baseUser: User
+        let baseOrganizer: User
+        let ticket1: Ticket
+        let ticket2: Ticket
+        let ticket3: Ticket
+        let ticket4: Ticket
+        let ticket5: Ticket
+        let ticket6: Ticket
+        
+
+        beforeEach(async () => {
+            baseOrganizer = await helper.createOrganizator()
+            const event = await helper.createEvent({organizerId: baseOrganizer.id, id: 100, date: DateUtils.addHours({hours: 3})})
+            const event2 = await helper.createEvent({organizerId: baseOrganizer.id, id: 101, date: DateUtils.addHours({hours: 1})})
+            const event3 = await helper.createEvent({organizerId: baseOrganizer.id, id: 102, date: DateUtils.addHours({hours: -1})})
+
+            baseUser = await helper.createUserAndToken()
+
+            ticket1 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.BOOKED, paymentIntentId: "p0"})
+            ticket2 = await helper.createTicket({eventId: event2.id, userId: baseUser.id, status: TicketStatus.BOOKED, paymentIntentId: "p1"})
+            ticket3 = await helper.createTicket({eventId: event3.id, userId: baseUser.id, status: TicketStatus.BOOKED, paymentIntentId: "p2"})
+            ticket4 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.CANCELLED, paymentIntentId: "p3"})
+            ticket5 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.REFUNDED, paymentIntentId: "p4"})
+            ticket6 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.REFUND_FAILED, paymentIntentId: "p5"})
+        })
+
+        const execute = async (query: GetUserTicketsQueryDto = {}) => {
+            return request(app.getHttpServer())
+                .get("/tickets")
+                .query(query)
+                .set("Authorization", `Bearer ${helper.token}`)
+                .send()
+        }
+
+        it("should return not expired tickets as default", async() => {
+            const response = await execute()
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(5)
+            expect(response.body[0].event).toBeUndefined()
+        })
+
+        it("should return REFUNDED when status is REFUNDED", async() => {
+            const response = await execute({status: TicketStatus.REFUNDED})
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(1)
+            expect(response.body[0].id).toBe(ticket5.id)
+        })
+
+        it("should return tickets with dateFrom query", async() => {
+            const response = await execute({dateFrom: DateUtils.addHours({hours: 2})})
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(4)
+        })
+
+        it("should return tickets with dateTo query", async() => {
+            const response = await execute({dateTo: DateUtils.addHours({hours: 0})})
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(1)
+            expect(response.body[0].id).toBe(ticket3.id)
+        })
+
+        it("should return tickets with dateTo and dateFrom query", async() => {
+            const response = await execute({dateTo: DateUtils.addHours({hours: 2}), dateFrom: DateUtils.addHours({hours: -2})})
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(2)
+            expect(response.body[0].id).toBe(ticket2.id)
+            expect(response.body[1].id).toBe(ticket3.id)
+        })
+
+        it("should return tickets with desc event date, id desc order", async() => {
+            const response = await execute()
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(5)
+            expect(response.body[0].id).toBe(ticket6.id)
+            expect(response.body[1].id).toBe(ticket5.id)
+            expect(response.body[2].id).toBe(ticket4.id)
+            expect(response.body[3].id).toBe(ticket1.id)
+            expect(response.body[4].id).toBe(ticket2.id)
+        })
+
+        it("should return tickets with event property when include param contains event", async() => {
+            const response = await execute({include: "event"})
+            expect(response.status).toBe(200)
+            expect(response.body[0].event).not.toBeNull()
+            expect(response.body[0].event.organizer).not.toBeNull()
+        })
+    })
+
 })

@@ -1,5 +1,7 @@
+import { DateUtils } from '@/common/date.utils';
+import { GetEventTicketsQueryDto } from '@/events/dto/get-event-tickets-query.dto';
 import { PrismaService } from '@/prisma/prisma.service';
-import { ParticipantStatus, Role } from "@prisma/client";
+import { Event, ParticipantStatus, Role, Ticket, TicketStatus, User } from "@prisma/client";
 import { E2eHelper } from '@test/utils/e2e-helper';
 import { createTestUser } from "@test/utils/test-helpers";
 import { TestUtils } from "@test/utils/test-utils";
@@ -206,6 +208,75 @@ describe("Events", () => {
             const response = await execute(eventId)
             expect(response.status).toBe(404)
         })
+    })
+
+
+    describe("getEventTickets", () => {
+        let baseEvent: Event
+        let baseUser: User
+        let baseUser2: User
+        let baseOrganizer: User
+        let ticket1: Ticket
+        let ticket2: Ticket
+        let ticket3: Ticket
+        let ticket4: Ticket
+        
+
+        beforeEach(async () => {
+            baseOrganizer = await helper.createOrganizerAndToken()
+            baseEvent = await helper.createEvent({organizerId: baseOrganizer.id, id: 100, date: DateUtils.addHours({hours: 3})})
+
+            baseUser = await helper.createUser({email: "demo@example.com", sub: 2})
+            baseUser2 = await helper.createUser({email: "demo2@example.com", sub: 3})
+
+            ticket1 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, status: TicketStatus.BOOKED, paymentIntentId: "p0"})
+            ticket2 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser2.id, status: TicketStatus.BOOKED, paymentIntentId: "p1"})
+            ticket3 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, status: TicketStatus.CANCELLED, paymentIntentId: "p3"})
+            ticket4 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser2.id, status: TicketStatus.REFUNDED, paymentIntentId: "p4"})
+        })
+
+        const execute = async (id: number = baseEvent.id, query: GetEventTicketsQueryDto = {}) => {
+            return request(app.getHttpServer())
+                .get(`/events/${id}/tickets`)
+                .query(query)
+                .set("Authorization", `Bearer ${helper.token}`)
+                .send()
+        }
+
+        it("should return tickets with given status", async () => {
+            const response = await execute(baseEvent.id, {status: TicketStatus.BOOKED})
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(2)
+            expect(response.body[0].id).toEqual(ticket1.id)
+            expect(response.body[1].id).toEqual(ticket2.id)
+        })
+
+        it("should return tickets with given userId", async () => {
+            const response = await execute(baseEvent.id, {userId: baseUser.id})
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(2)
+            expect(response.body[0].id).toEqual(ticket1.id)
+            expect(response.body[1].id).toEqual(ticket3.id)
+        })
+
+        it("should return tickets with user when include param contains user", async () => {
+            const response = await execute(baseEvent.id, {include: "user"})
+            expect(response.status).toBe(200)
+            expect(response.body[0].user).not.toBeNull()
+        })
+
+        it("should return event tickets", async () => {
+            const response = await execute()
+            expect(response.status).toBe(200)
+            expect(response.body).toHaveLength(4)
+            expect(response.body[0].user).toBeUndefined()
+        })
+
+        it("should throw NotFoundException if event not found", async () => {
+            const response = await execute(baseEvent.id + 1)
+            expect(response.status).toBe(404)
+        })
+
     })
 
 });

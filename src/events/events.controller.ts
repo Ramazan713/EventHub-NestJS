@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, RawBodyRequest, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Query, RawBodyRequest, Req, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
@@ -10,6 +10,7 @@ import { EventsService } from './events.service';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { TicketsService } from '@/tickets/tickets.service';
 import { Request } from 'express';
+import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
 
 
 
@@ -94,9 +95,10 @@ export class EventsController {
     @Get(":id/tickets")
     async getTickets(
         @CurrentUser() user: TokenPayload,
-        @Param("id") eventId: number
+        @Param("id") eventId: number,
+        @Query() query: GetEventTicketsQueryDto
     ){
-        return this.ticketsService.getEventTickets(eventId, user.sub);
+        return this.ticketsService.getEventTickets(eventId, user.sub, query);
     }
 
     @HttpCode(200)

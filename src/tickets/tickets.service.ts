@@ -7,6 +7,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
 import { TicketWithDetailResponseDto } from './dto/ticket-with-detail-response.dto';
+import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
+import { GetEventTicketsQueryDto } from '../events/dto/get-event-tickets-query.dto';
 
 
 
@@ -33,28 +35,52 @@ export class TicketsService {
         return mapToDto(TicketWithDetailResponseDto, ticket)
     }
 
-    async getUserTickets(userId: number): Promise<TicketWithDetailResponseDto[]> {
+    async getUserTickets(userId: number, query: GetUserTicketsQueryDto): Promise<TicketWithDetailResponseDto[]> {
+        const whereTicket: Prisma.TicketWhereInput = {}
+
+        if(query.status) whereTicket.status = query.status
+        if(query.dateFrom) whereTicket.event = {date: {gte: query.dateFrom}}
+            else whereTicket.event = {date: {gte: new Date()}}
+        if(query.dateTo) whereTicket.event = {date: {lte: query.dateTo}}
         const tickets = await this.prisma.ticket.findMany({
-            where: {userId},
+            where: { userId, ...whereTicket },
             include: {
-                event: {
+                event: query.include == "event" ? {
                     include: {
                         organizer: true
                     }
-                }
+                }: undefined
+            },
+            orderBy: {
+                event: {
+                    date: "desc"
+                },
             }
         })
         return tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
     }
 
-    async getEventTickets(eventId: number, organizerId: number): Promise<TicketWithDetailResponseDto[]> {
-        const tickets = await this.prisma.ticket.findMany({
-            where: {eventId},
+    async getEventTickets(eventId: number, organizerId: number, query: GetEventTicketsQueryDto): Promise<TicketWithDetailResponseDto[]> {
+        const whereQuery: Prisma.TicketWhereInput = {}
+        if(query.status) whereQuery.status = query.status
+        if(query.userId) whereQuery.userId = query.userId
+
+        const event = await this.prisma.event.findFirst({
+            where: {
+                id: eventId,
+                organizerId,
+            },
             include: {
-                user: true
+                tickets: {
+                    where: whereQuery
+                }
             }
         })
-        return tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
+        if(!event){
+            throw new NotFoundException("event not found")
+        }
+        
+        return event.tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
     }
 
     async createTicket(eventId: number, userId: number): Promise<CheckoutSession> {
