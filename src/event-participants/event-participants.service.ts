@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { ParticipantStatus } from '@prisma/client';
+import { ParticipantStatus, Prisma } from '@prisma/client';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { EventParticipantDetailResponseDto } from './dto/event-participant-detail-response.dto';
+import { GetEventParticipantQueryDto } from '@/events/dto/get-event-participant-query.dto';
+import { GetUserParticipantQueryDto } from '@/users/dto/get-user-participant-query.dto';
 
 @Injectable()
 export class EventParticipantsService {
@@ -114,21 +116,23 @@ export class EventParticipantsService {
         })
     }
 
-    async getRegisteredParticipants(eventId: number, organizerId: number): Promise<EventParticipantDetailResponseDto[]> {
+    async getRegisteredParticipants(eventId: number, organizerId: number, query: GetEventParticipantQueryDto): Promise<EventParticipantDetailResponseDto[]> {
+        const whereQuery: Prisma.EventParticipantWhereInput = {}
+        if(query.status) whereQuery.status = query.status
+        if(query.userId) whereQuery.userId = query.userId
+
+
         const event = await this.prisma.event.findFirst({
             where: {
                 id: eventId,
                 organizerId,
-                isCancelled: false,
             },
             include: {
                 participants: {
-                    where: {
-                        status: ParticipantStatus.REGISTERED
-                    },
-                    include: {
+                    where: whereQuery,
+                    include: query.include === "user" ? {
                         user: true
-                    }
+                    } : undefined
                 },
             }
         });
@@ -138,18 +142,22 @@ export class EventParticipantsService {
         return event.participants.map(participant => mapToDto(EventParticipantDetailResponseDto, participant));
     }
 
-    async getUserParticipants(userId: number): Promise<EventParticipantDetailResponseDto[]> {
+    async getUserParticipants(userId: number, query: GetUserParticipantQueryDto): Promise<EventParticipantDetailResponseDto[]> {
+        const whereQuery: Prisma.EventParticipantWhereInput = {}
+        if(query.status) whereQuery.status = query.status
+        if(query.eventId) whereQuery.eventId = query.eventId
+
         const eventParticipants = await this.prisma.eventParticipant.findMany({
             where: {
                 userId,
-                status: ParticipantStatus.REGISTERED
+                ...whereQuery,
             },
             include: {
-                event: {
+                event: query.include === "event" ? {
                     include: {
                         organizer: true
                     }
-                }
+                } : undefined
             }
         });
         return eventParticipants.map(participant => mapToDto(EventParticipantDetailResponseDto, participant));

@@ -11,6 +11,7 @@ import { EventParticipantsService } from '@/event-participants/event-participant
 import { TicketsService } from '@/tickets/tickets.service';
 import { Request } from 'express';
 import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
+import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.dto';
 
 
 
@@ -74,9 +75,10 @@ export class EventsController {
     @Get(":id/participants")
     async getParticipants(
         @CurrentUser() user: TokenPayload,
-        @Param("id") eventId: number
+        @Param("id") eventId: number,
+        @Query() query: GetEventParticipantQueryDto
     ){
-        return this.eventParticipantsService.getRegisteredParticipants(eventId, user.sub);
+        return this.eventParticipantsService.getRegisteredParticipants(eventId, user.sub, query);
     }
 
     @HttpCode(201)

@@ -3,7 +3,7 @@ import { DateUtils } from "@/common/date.utils";
 import { PrismaService } from "@/prisma/prisma.service";
 import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { DraftEvent, Event, EventCategory, Prisma, Role, Ticket, TicketStatus, User } from "@prisma/client";
+import { DraftEvent, Event, EventCategory, EventParticipant, ParticipantStatus, Prisma, Role, Ticket, TicketStatus, User } from "@prisma/client";
 import Stripe from "stripe";
 
 
@@ -90,6 +90,17 @@ export class E2eHelper {
                 status: data?.status ?? TicketStatus.BOOKED,
                 priceAtPurchase: 100,
                 paymentIntentId: data?.paymentIntentId ?? "pi_123"
+            }
+        })
+    }
+
+    async createParticipant(data: Partial<Prisma.EventParticipantUncheckedCreateInput> = {}): Promise<EventParticipant> {
+        return await prisma.eventParticipant.create({
+            data: {
+                eventId: data?.eventId ?? 1,
+                userId: data?.userId ?? this.baseTokenPayload.sub,
+                status: data?.status ?? ParticipantStatus.REGISTERED,
+                id: data?.id
             }
         })
     }

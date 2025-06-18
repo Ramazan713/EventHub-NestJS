@@ -1,10 +1,11 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { TokenPayload } from '@/auth/token-payload.interface';
 import { UsersService } from './users.service';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { EventsService } from '@/events/events.service';
+import { GetUserParticipantQueryDto } from './dto/get-user-participant-query.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -26,9 +27,10 @@ export class UsersController {
 
     @Get("participants")
     getParticipants(
-        @CurrentUser() user: TokenPayload
+        @CurrentUser() user: TokenPayload,
+        @Query() query: GetUserParticipantQueryDto
     ){
-        return this.eventParticipantsService.getUserParticipants(user.sub)
+        return this.eventParticipantsService.getUserParticipants(user.sub, query)
     }
 
     @Get("events")
