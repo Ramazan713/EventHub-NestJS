@@ -1,103 +1,55 @@
-import { TokenPayload } from '@/auth/token-payload.interface';
-import { DateUtils } from '@/common/date.utils';
 import { PrismaService } from '@/prisma/prisma.service';
 import { INestApplication } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import { Event, EventCategory, ParticipantStatus, Role, Ticket, TicketStatus, User } from "@prisma/client";
+import { Event, ParticipantStatus, Prisma, Ticket, TicketStatus, User } from "@prisma/client";
+import { E2eHelper } from '@test/utils/e2e-helper';
 import { PaymentTestUtils } from '@test/utils/payment.utilts';
-import { createTestUser } from "@test/utils/test-helpers";
-import Stripe from 'stripe';
 import * as request from 'supertest';
 
-const baseTokenPayload = { sub: 2, email: "example2@gmail.com", role: Role.USER }
-
 describe("Tickets", () => {
-    let stripe: Stripe
     let app: INestApplication
-    let jwtService: JwtService
     let prisma: PrismaService;
-    let token: string
+    let helper: E2eHelper
 
     beforeAll(async () => {
         app = global.app;
-        jwtService = app.get(JwtService)
+        helper = new E2eHelper()
         prisma = app.get(PrismaService);
-        stripe = app.get(Stripe)
-    })
-
-    const createUserAndToken = async (payload: TokenPayload = baseTokenPayload) => {
-        const user = await createTestUser(prisma, payload)
-        token = await jwtService.signAsync(payload)
-        return user
-    }
-
-    const createEvent = async(
-        {capacity, price, organizerId, eventId, currentParticipants, isCancelled}:{
-            capacity?: number, price?: number, organizerId?: number, eventId?: number,
-            currentParticipants?: number, isCancelled?: boolean
-        } = {},
-    ) => {
-        return prisma.event.create({
-            data: {
-                id: eventId,
-                category: EventCategory.OTHER,
-                description: "test",
-                isCancelled: isCancelled ?? false,
-                isOnline: false,
-                location: "test",
-                organizerId: organizerId ?? baseTokenPayload.sub,
-                capacity,
-                date: DateUtils.addHours({hours: 3}),
-                title: "test",
-                price: price ?? 100,
-                currentParticipants: currentParticipants ?? 10,
-            },
-        })        
-    }
-
-    const getSignature = (payload: string) => stripe.webhooks.generateTestHeaderString({
-        payload,
-        secret: process.env.STRIPE_WEBHOOK_SECRET!,
     })
 
     describe("create ticket",() => {
-        let baseEventId: number
         let baseEvent: Event
-        let baseOrganizerId: number
 
         beforeEach(async () => {
-            const organizer = await createTestUser(prisma, {sub: 1000, email: "organizer@gmail.com", role: Role.ORGANIZER})
-            baseOrganizerId = organizer.id
-            baseEvent = await createEvent({eventId: 100, organizerId: baseOrganizerId})
-            baseEventId = baseEvent.id
+            const organizer = await helper.createOrganizator()
+            baseEvent = await helper.createEvent({id: 100, organizerId: organizer.id, price: 100})
         })
 
-        const execute = async (eventId: number = baseEventId) => {
+        const execute = async (eventId: number = baseEvent.id) => {
             return request(app.getHttpServer())
                 .post("/events/" + eventId + "/tickets")
-                .set("Authorization", `Bearer ${token}`)
+                .set("Authorization", `Bearer ${helper.token}`)
                 .send()
         }
 
         it("should throw NotFoundException if event not found", async () => {
-            await createUserAndToken()
-            const response = await execute(baseEventId + 1)
+            await helper.createUserAndToken()
+            const response = await execute(baseEvent.id + 1)
             expect(response.status).toBe(404)
         })
 
         it("should throw BadRequestException if user has already registered", async () => {
-            await createUserAndToken()
+            await helper.createUserAndToken()
             await execute()
             const response = await execute()
             expect(response.status).toBe(400)
         })
 
          it("should throw BadRequestException if user has already Booked", async () => {
-            await createUserAndToken()
+            await helper.createUserAndToken()
             await prisma.ticket.create({
                 data: {
-                    eventId: baseEventId,
-                    userId: baseTokenPayload.sub,
+                    eventId: baseEvent.id,
+                    userId: helper.baseTokenPayload.sub,
                     status: TicketStatus.BOOKED,
                     priceAtPurchase: 100
                 }
@@ -107,62 +59,62 @@ describe("Tickets", () => {
         })
 
         it("should throw NotFoundException if event is cancelled", async () => {
-            await createUserAndToken()
-            await createEvent({eventId: baseEventId + 1, isCancelled: true})
-            const response = await execute(baseEventId + 1)
+            await helper.createUserAndToken()
+            await helper.createEvent({id: baseEvent.id + 1, isCancelled: true})
+            const response = await execute(baseEvent.id + 1)
             expect(response.status).toBe(404)
         })
 
         it("should throw BadRequestException if price is free", async () => {
-            await createUserAndToken()
-            await createEvent({eventId: baseEventId + 1, price: 0})
-            const response = await execute(baseEventId + 1)
+            await helper.createUserAndToken()
+            await helper.createEvent({id: baseEvent.id + 1, price: 0})
+            const response = await execute(baseEvent.id + 1)
             expect(response.status).toBe(400)
         })
 
        
 
         it("should throw BadRequestException if event is full with BOOKED", async () => {
-            await createUserAndToken()
-            await createEvent({eventId: baseEventId + 1, capacity: 1, currentParticipants: 0})
+            await helper.createUserAndToken()
+            await helper.createEvent({id: baseEvent.id + 1, capacity: 1, currentParticipants: 0})
             await prisma.event.update({
                 where: {
-                    id: baseEventId + 1
+                    id: baseEvent.id + 1
                 },
                 data: {
                     tickets: {
                         create: {
-                            userId: baseTokenPayload.sub,
+                            userId: helper.baseTokenPayload.sub,
                             status: TicketStatus.BOOKED,
                             priceAtPurchase: 100
                         }
                     }
                 }
             })
-            const response = await execute(baseEventId + 1)
+            const response = await execute(baseEvent.id + 1)
             expect(response.status).toBe(400)
         })
 
         it("should throw BadRequestException if event is full", async () => {
-            await createUserAndToken()
-            await createEvent({eventId: baseEventId + 1, capacity: 1, currentParticipants: 1})
-            const response = await execute(baseEventId + 1)
+            await helper.createUserAndToken()
+            await helper.createEvent({id: baseEvent.id + 1, capacity: 1, currentParticipants: 1})
+            const response = await execute(baseEvent.id + 1)
             expect(response.status).toBe(400)
         })
         
 
         it("should create ticket and update event", async () => {
-            await createUserAndToken()
+            await helper.createUserAndToken()
             const response = await execute()
+            const ticket = await prisma.ticket.findFirst({where: {eventId: baseEvent.id, userId: helper.baseTokenPayload.sub}})
+            const event = await prisma.event.findFirst({where: {id: baseEvent.id}, include: {tickets: true}})
+           
             expect(response.status).toBe(201)
-            const ticket = await prisma.ticket.findFirst({where: {eventId: baseEventId, userId: baseTokenPayload.sub}})
-            const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {tickets: true}})
-
             expect(ticket).not.toBeNull()
             expect(ticket!!.status).toBe(TicketStatus.RESERVED)
             expect(ticket!!.priceAtPurchase).toBe(baseEvent.price)
             expect(event?.tickets.length).toBe(1)
-            expect(ticket!!.userId).toBe(baseTokenPayload.sub)
+            expect(ticket!!.userId).toBe(helper.baseTokenPayload.sub)
             expect(ticket!!.status).toBe(TicketStatus.RESERVED)
             expect(ticket!!.paymentSessionId).not.toBeNull()
             expect(ticket!!.paymentSessionId).toEqual(response.body.paymentSessionId)
@@ -171,11 +123,11 @@ describe("Tickets", () => {
         })
 
         it("should create ticket when user has cancelled ticket before", async () => {
-            await createUserAndToken()
+            await helper.createUserAndToken()
             await prisma.ticket.create({
                 data: {
-                    eventId: baseEventId,
-                    userId: baseTokenPayload.sub,
+                    eventId: baseEvent.id,
+                    userId: helper.baseTokenPayload.sub,
                     status: TicketStatus.CANCELLED,
                     priceAtPurchase: 100
                 }
@@ -185,18 +137,18 @@ describe("Tickets", () => {
         })
 
         it("should not increase or decrease currentParticipants when create ticket success but handle webhook failed", async () => {
-            await createUserAndToken()
+            await helper.createUserAndToken()
             const response = await execute()
-            const firstEvent = await prisma.event.findFirst({where: {id: baseEventId}, include: {tickets: true}})
+            const firstEvent = await prisma.event.findFirst({where: {id: baseEvent.id}, include: {tickets: true}})
             const insertedTicket = firstEvent!!.tickets[0]
-            const payload = PaymentTestUtils.getFailedPayload({ticketId: insertedTicket.id, eventId: baseEventId})
+            const payload = PaymentTestUtils.getFailedPayload({ticketId: insertedTicket.id, eventId: baseEvent.id})
 
             const webhookResponse = await request(app.getHttpServer())
                 .post("/events/webhook")
-                .set("stripe-signature", getSignature(payload))
+                .set("stripe-signature", helper.getSignature(payload))
                 .send(payload)
 
-            const lastEvent = await prisma.event.findFirst({where: {id: baseEventId}})
+            const lastEvent = await prisma.event.findFirst({where: {id: baseEvent.id}})
 
             expect(response.status).toBe(201)
             expect(webhookResponse.status).toBe(200)
@@ -211,24 +163,16 @@ describe("Tickets", () => {
         let baseEvent: Event
 
         beforeEach(async () => {
-            const organizer = await createTestUser(prisma, {sub: 1000, email: "organizer@gmail.com", role: Role.ORGANIZER})
-            baseEvent = await createEvent({eventId: 100, organizerId: organizer.id})
-            baseUser = await createUserAndToken(baseTokenPayload)
+            const organizer = await helper.createOrganizator()
+            baseEvent = await helper.createEvent({id: 100, organizerId: organizer.id, price: 100})
+            baseUser = await helper.createUserAndToken()
         })
 
-        const createBaseTicket = async ({eventId, userId, status, paymentIntentId}: {eventId?: number, userId?: number, status?: TicketStatus, paymentIntentId?: string | null} = {}) => {
-            baseTicket = await prisma.ticket.create({
-                data: {
-                    eventId: eventId ?? baseEvent.id,
-                    userId: userId ?? baseUser.id,
-                    status: status ?? TicketStatus.BOOKED,
-                    priceAtPurchase: 100,
-                    paymentIntentId: paymentIntentId ?? "pi_123"
-                }
-            })
+        const createBaseTicket = async (data: Partial<Prisma.TicketUncheckedCreateInput> = {}) => {
+            baseTicket = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, ...data})
         }
 
-        const execute = async (ticketId: number = baseTicket.id, sendToken = token) => {
+        const execute = async (ticketId: number = baseTicket.id, sendToken = helper.token) => {
             return request(app.getHttpServer())
                 .post("/tickets/" + ticketId + "/cancel")
                 .set("Authorization", `Bearer ${sendToken}`)
@@ -254,8 +198,8 @@ describe("Tickets", () => {
         })
 
         it("should throw NotFoundException if ticket belongs to another user", async () => {
-            await createTestUser(prisma, {sub: baseTokenPayload.sub + 1, email: "userx@gmail.com", role: Role.USER})
-            await createBaseTicket({userId: baseTokenPayload.sub + 1})
+            await helper.createUser({sub: helper.baseTokenPayload.sub + 1, email: "userx@gmail.com"})
+            await createBaseTicket({userId: helper.baseTokenPayload.sub + 1})
             const response = await execute()
             expect(response.status).toBe(404)
         })
@@ -272,45 +216,35 @@ describe("Tickets", () => {
     describe("Webhook", () => {
         let baseEventId: number
         let baseEvent: Event
-        let baseOrganizerId: number
         let baseTicket: Ticket
         let baseUser: User
         let basePaymentIntentId: string
 
         beforeEach(async () => {
             basePaymentIntentId = "pi_123"
-            const organizer = await createTestUser(prisma, {sub: 1000, email: "organizer@gmail.com", role: Role.ORGANIZER})
-            baseOrganizerId = organizer.id
-            baseEvent = await createEvent({eventId: 100, organizerId: baseOrganizerId})
+            const organizer = await helper.createOrganizator()
+            baseEvent = await helper.createEvent({id: 100, organizerId: organizer.id})
             baseEventId = baseEvent.id
 
-            baseUser = await createTestUser(prisma, baseTokenPayload)
+            baseUser = await helper.createUserAndToken()
         })
 
-        const createBaseTicket = async ({eventId, userId, status, paymentIntentId}: {eventId?: number, userId?: number, status?: TicketStatus, paymentIntentId?: string | null} = {}) => {
-            baseTicket = await prisma.ticket.create({
-                data: {
-                    eventId: eventId ?? baseEvent.id,
-                    userId: userId ?? baseUser.id,
-                    status: status ?? TicketStatus.RESERVED,
-                    priceAtPurchase: 100,
-                    paymentIntentId: paymentIntentId ?? basePaymentIntentId
-                }
-            })
+        const createBaseTicket = async (data: Partial<Prisma.TicketUncheckedCreateInput> & {status: TicketStatus}) => {
+            baseTicket = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, ...data})
             return baseTicket
         }
 
         const execute = async (payload: string) => {
             return request(app.getHttpServer())
                 .post("/events/webhook")
-                .set("stripe-signature", getSignature(payload))
+                .set("stripe-signature", helper.getSignature(payload))
                 .set("Content-Type", "application/json")
                 .send(payload)
         }
 
         describe("payment.success", () => {
             it("should update ticket status to BOOKED when payment is successful", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 const response = await execute(baseSuccessPayload)
                 const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
@@ -322,7 +256,7 @@ describe("Tickets", () => {
             })
 
             it("should create event participant when payment is successful", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 await execute(baseSuccessPayload)
                 const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {participants: true}})
@@ -332,7 +266,7 @@ describe("Tickets", () => {
             })
 
             it("when payment.success is called twice, should increment event participants once", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const payload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 const response = await execute(payload)
                 await execute(payload)
@@ -343,10 +277,11 @@ describe("Tickets", () => {
             })
 
             it("should increment event participants when payment is successful", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const baseSuccessPayload = PaymentTestUtils.getSuccessedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 const response = await execute(baseSuccessPayload)
                 const event = await prisma.event.findFirst({where: {id: baseEventId}})
+          
                 expect(event?.currentParticipants).toBe(1 + baseEvent.currentParticipants)
                 expect(response.status).toBe(200)
             })
@@ -354,7 +289,7 @@ describe("Tickets", () => {
 
         describe("payment.failed", () => {
             it("should update ticket status to CANCELLED when payment is failed", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 const response = await execute(baseFailedPayload)
                 const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
@@ -366,7 +301,7 @@ describe("Tickets", () => {
             })
 
             it("should decrese event participants when payment is failed", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 const response = await execute(baseFailedPayload)
                 const event = await prisma.event.findFirst({where: {id: baseEventId}})
@@ -375,7 +310,7 @@ describe("Tickets", () => {
             })
 
             it("should cancel event participants when payment is failed", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const baseFailedPayload = PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id, eventId: baseEventId})
                 const response = await execute(baseFailedPayload)
                 const event = await prisma.event.findFirst({where: {id: baseEventId}, include: {participants: true}})
@@ -385,7 +320,7 @@ describe("Tickets", () => {
             })
 
             it("should throw BadRequestException if ticket not found", async() => {
-                await createBaseTicket()
+                await createBaseTicket({status: TicketStatus.RESERVED})
                 const response = await execute(PaymentTestUtils.getFailedPayload({ticketId: baseTicket.id + 1, eventId: baseEventId}))
                 expect(response.status).toBe(400)
             })
