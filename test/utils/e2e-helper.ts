@@ -45,6 +45,13 @@ export class E2eHelper {
         return this.createUserAndToken({role: Role.ORGANIZER, ...payload})
     }
 
+    async generateAndSetToken(payload: Partial<TokenPayload>): Promise<string> {
+        this.token = await this.jwtService.signAsync(this.getTokenPayloadOrDefault(payload))
+        return this.token
+    }
+
+  
+
     async createDraft(data: Partial<Prisma.DraftEventUncheckedCreateInput> = {}): Promise<DraftEvent> {
         return await prisma.draftEvent.create({
             data: {

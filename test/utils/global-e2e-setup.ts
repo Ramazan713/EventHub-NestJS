@@ -1,7 +1,7 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/prisma/prisma.service';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { resetTestDatabase } from './prisma-reset';
 
 declare global {
@@ -18,13 +18,14 @@ beforeAll(async () => {
   global.app = moduleFixture.createNestApplication({
     rawBody: true
   });
-  app.useGlobalPipes(new ValidationPipe({ 
+  
+  global.app.useGlobalPipes(new ValidationPipe({ 
     transform: true,
-    transformOptions: { enableImplicitConversion: true },
+    transformOptions: { enableImplicitConversion: false },
     whitelist: true,
   }));
   
-  await app.init();
+  await global.app.init();
   global.prisma = global.app.get(PrismaService);
 });
 

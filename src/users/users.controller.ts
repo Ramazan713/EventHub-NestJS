@@ -6,6 +6,7 @@ import { UsersService } from './users.service';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { EventsService } from '@/events/events.service';
 import { GetUserParticipantQueryDto } from './dto/get-user-participant-query.dto';
+import { GetUserEventsQueryDto } from './dto/get-user-events-query.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -35,8 +36,9 @@ export class UsersController {
 
     @Get("events")
     getEvents(
-        @CurrentUser() user: TokenPayload
+        @CurrentUser() user: TokenPayload,
+        @Query() query: GetUserEventsQueryDto
     ){
-        return this.eventService.getUserEvents(user.sub)
+        return this.eventService.getUserEvents(user.sub, query)
     }
 }

@@ -12,6 +12,7 @@ import { TicketsService } from '@/tickets/tickets.service';
 import { Request } from 'express';
 import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
 import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.dto';
+import { GetEventsQueryDto } from './dto/get-events-query.dto';
 
 
 
@@ -30,9 +31,10 @@ export class EventsController {
     @UseGuards(JwtAuthGuard)
     @Get()
     async getEvents(
-        @CurrentUser() user: TokenPayload
+        @CurrentUser() user: TokenPayload,
+        @Query() query: GetEventsQueryDto
     ): Promise<EventDto[]> {
-        return this.eventsService.getEventsByOwner(user.sub);
+        return this.eventsService.getEventsByOwner(user.sub, query);
     }
 
    
