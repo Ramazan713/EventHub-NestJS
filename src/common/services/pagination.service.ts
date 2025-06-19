@@ -1,8 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { List } from "lodash";
 import { PageInfoDto } from "../dto/page-info.dto";
 import { PaginationQueryDto } from "../dto/pagination-query.dto";
-import { string } from "joi";
 import { PaginationResult } from "../interfaces/pagination-result.interface";
 
 
@@ -30,13 +28,12 @@ export class PaginationService {
         const take = limit + 1;
 
         if (
-            (first != null && before != null) ||
-            (last  != null && after  != null) ||
-            (first != null && last  != null) ||
-            (after != null && before != null)
+            (first != null && last != null) ||
+            (first != null && before != null) || 
+            (last != null && after != null)     
         ) {
             throw new BadRequestException(
-                'Invalid pagination parameters: cannot use first with before or last with after'
+                'Invalid pagination parameters'
             );
         }
 
@@ -50,38 +47,41 @@ export class PaginationService {
             { id: effectiveSortOrder },
         ];
         
-        let cursorObj: { lastValue: any; lastId: number } | undefined;
-        let cursorOp: 'gt' | 'lt' = 'gt';
-        if (after) {
-            cursorObj = this.decodeCursor(after);
-            cursorOp = effectiveSortOrder === "asc" ? 'gt' : 'lt';
-        } else if (before) {
-            cursorObj = this.decodeCursor(before);
-            cursorOp = effectiveSortOrder === "desc" ? 'lt' : 'gt';
-        }else{
-            cursorOp = effectiveSortOrder === "asc" ? 'lt' : 'gt';
-        }
-        
-
         let cursorWhere = {};
-        if (cursorObj) {
-        const { lastValue, lastId } = cursorObj;
-        cursorWhere = {
-            OR: [
-                    { [sortBy]: { [cursorOp]: lastValue } },
-                    {
-                        AND: [
-                            { [sortBy]: lastValue },
-                            { id: { [cursorOp]: lastId } },
-                        ],
-                    },
+        
+        // After ve Before cursor'larını işle
+        if (after && before) {
+            // Pencere pagination: after'dan sonra VE before'dan önce
+            const afterCursor = this.decodeCursor(after);
+            const beforeCursor = this.decodeCursor(before);
+            
+            // ORIJINAL sıralama kullan, effective değil
+            const afterOp = sortOrder === "asc" ? 'gt' : 'lt';
+            const beforeOp = sortOrder === "asc" ? 'lt' : 'gt';
+            
+            cursorWhere = {
+                AND: [
+                    this.getCursorWhereQuery(afterCursor, sortBy, afterOp),
+                    this.getCursorWhereQuery(beforeCursor, sortBy, beforeOp)
                 ],
             };
+        } else if (after) {
+            // Sadece after - effective sıralama kullan
+            const cursorObj = this.decodeCursor(after);
+            const cursorOp = effectiveSortOrder === "asc" ? 'gt' : 'lt';
+            
+            cursorWhere =  this.getCursorWhereQuery(cursorObj, sortBy, cursorOp)
+        } else if (before) {
+            // Sadece before - ORIJINAL sıralama kullan
+            const cursorObj = this.decodeCursor(before);
+            const cursorOp = sortOrder === "asc" ? 'lt' : 'gt';
+            
+            cursorWhere = this.getCursorWhereQuery(cursorObj, sortBy, cursorOp)
         }
 
         const where = {
             ...(options.where ?? {}),
-            ...(cursorObj ? cursorWhere : {}),
+            ...(Object.keys(cursorWhere).length > 0 ? cursorWhere : {}),
         };
 
         let records: [T] = await model.findMany({
@@ -98,6 +98,7 @@ export class PaginationService {
         if (isBackward) {
             slice = slice.reverse();
         }
+
         let startCursor: string | undefined;
         let endCursor: string | undefined;
 
@@ -106,11 +107,27 @@ export class PaginationService {
             endCursor = this.encodeCursor(slice[slice.length - 1], sortBy);
         }
 
+        // PageInfo mantığını güncelle
+        let hasNextPage = false;
+        let hasPreviousPage = false;
+
+        if (after && before) {
+            // Pencere pagination için özel mantık
+            hasNextPage = hasExtra; // Pencere içinde daha fazla kayıt var mı?
+            hasPreviousPage = Boolean(after); // After varsa önceki sayfa vardır
+        } else if (isForward) {
+            hasNextPage = hasExtra;
+            hasPreviousPage = Boolean(after);
+        } else {
+            hasNextPage = Boolean(before);
+            hasPreviousPage = hasExtra;
+        }
+
         const pageInfo: PageInfoDto = {
-            hasNextPage: isForward ? hasExtra : Boolean(before),
-            hasPreviousPage: isForward ? Boolean(after) : hasExtra,
-            startCursor: startCursor,
-            endCursor: endCursor,
+            hasNextPage,
+            hasPreviousPage,
+            startCursor,
+            endCursor,
         };
 
         return {
@@ -125,6 +142,20 @@ export class PaginationService {
 
     private decodeCursor(cursor: string): any {
         return JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
+    }
+
+    private getCursorWhereQuery(cursorObject: any, sortBy: string, cursorOp: string) {
+        return {
+            OR: [
+                { [sortBy]: { [cursorOp]: cursorObject.lastValue } },
+                {
+                    AND: [
+                        { [sortBy]: cursorObject.lastValue },
+                        { id: { [cursorOp]: cursorObject.lastId } },
+                    ],
+                },
+            ],
+        }
     }
 
 }

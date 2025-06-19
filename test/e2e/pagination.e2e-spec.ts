@@ -1,7 +1,5 @@
 import { DateUtils } from '@/common/date.utils';
-import { PaginationService } from '@/common/services/pagination.service';
 import { GetEventsQueryDto } from '@/events/dto/get-events-query.dto';
-import { PrismaService } from '@/prisma/prisma.service';
 import { INestApplication } from "@nestjs/common";
 import { Event, User } from "@prisma/client";
 import { E2eHelper } from '@test/utils/e2e-helper';
@@ -9,15 +7,11 @@ import * as request from 'supertest';
 
 describe("Pagination", () => {
     let app: INestApplication
-    let prisma: PrismaService;
     let helper: E2eHelper
-    let paginationService: PaginationService
 
     beforeAll(async () => {
         app = global.app;
         helper = new E2eHelper()
-        prisma = app.get(PrismaService);
-        paginationService = app.get(PaginationService)
     })
 
 
@@ -74,12 +68,21 @@ describe("Pagination", () => {
             expect(res.status).toBe(400)
         })
 
-        it("should throw BadRequestException if after and before used together", async () => {
-            const res = await execute({
-                after: "test",
-                before: "test"
+        it("should return items if after and before used together", async () => {
+            const afterRes = await execute({
+                first: 1
             })
-            expect(res.status).toBe(400)
+            const beforeRes = await execute({
+                last: 1
+            })
+            const res = await execute({
+                after: afterRes.body.pageInfo.endCursor,
+                before: beforeRes.body.pageInfo.startCursor
+            })
+            expect(res.status).toBe(200)
+            const items = res.body.data
+            expect(items).toHaveLength(2)
+            expect(items.map(event => event.id)).toEqual([event2.id, event3.id])
         })
 
         it("should return all events if no pagination value provided", async () => {
