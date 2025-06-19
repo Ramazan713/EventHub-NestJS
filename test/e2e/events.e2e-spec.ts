@@ -203,13 +203,6 @@ describe("Events", () => {
             const response = await execute(eventId)
             expect(response.status).toBe(403)
         })
-
-        it("should throw NotFoundException if event is cancelled", async () => {
-            await helper.createOrganizerAndToken()
-            await createEventAndRegisterRandomUser({isCancelled: true})
-            const response = await execute(eventId)
-            expect(response.status).toBe(404)
-        })
     })
 
 

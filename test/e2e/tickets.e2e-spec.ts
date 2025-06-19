@@ -466,10 +466,10 @@ describe("Tickets", () => {
         })
 
         it("should return tickets with dateTo query", async() => {
-            const response = await execute({dateTo: DateUtils.addHours({hours: 0})})
+            const response = await execute({dateTo: DateUtils.addHours({hours: 2})})
             expect(response.status).toBe(200)
             expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toBe(ticket3.id)
+            expect(response.body[0].id).toBe(ticket2.id)
         })
 
         it("should return tickets with dateTo and dateFrom query", async() => {

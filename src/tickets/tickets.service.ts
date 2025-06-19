@@ -39,9 +39,13 @@ export class TicketsService {
         const whereTicket: Prisma.TicketWhereInput = {}
 
         if(query.status) whereTicket.status = query.status
-        if(query.dateFrom) whereTicket.event = {date: {gte: query.dateFrom}}
-            else whereTicket.event = {date: {gte: new Date()}}
-        if(query.dateTo) whereTicket.event = {date: {lte: query.dateTo}}
+
+        const eventParam: any = {date: {}}
+        if(query.dateTo) eventParam.date.lte = query.dateTo
+        if(query.dateFrom) eventParam.date.gte = query.dateFrom
+            else eventParam.date.gte = new Date()
+        whereTicket.event = eventParam
+
         const tickets = await this.prisma.ticket.findMany({
             where: { userId, ...whereTicket },
             include: {
