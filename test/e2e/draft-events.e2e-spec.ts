@@ -3,7 +3,7 @@ import { CreateDraftEventDto } from '@/draft-events/dto/create-draft-event.dto';
 import { UpdateDraftEventDto } from "@/draft-events/dto/update-draft-event.dto";
 import { PrismaService } from '@/prisma/prisma.service';
 import { INestApplication } from "@nestjs/common";
-import { EventCategory, Role } from "@prisma/client";
+import { DraftEvent, EventCategory, Role, User } from "@prisma/client";
 import { E2eHelper } from "@test/utils/e2e-helper";
 import { TestUtils } from "@test/utils/test-utils";
 import * as request from 'supertest';
@@ -123,7 +123,20 @@ describe("DraftEvent", () => {
     })
 
     describe("getDraftById", () => {
-        const execute = async (id: number) => {
+        let baseUser: User
+        let baseDraft: DraftEvent
+
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
+            baseUser = await helper.createOrganizerAndToken()
+            baseDraft = await helper.createDraft({organizerId: baseUser.id})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
+        })
+
+        const execute = async (id: number = baseDraft.id) => {
             return request(app.getHttpServer())
             .get('/draft-events/' + id)
             .auth(helper.token, { type: 'bearer' })
@@ -131,23 +144,21 @@ describe("DraftEvent", () => {
         }
 
         it("should throw NotFoundException if draft not found", async () => {
-            await helper.createOrganizerAndToken()
-            const response = await execute(1)
+            const response = await execute(baseDraft.id + 1)
             expect(response.status).toBe(404)
         })
 
         it("should throw ForbiddenException if user is not an organizer", async () => {
-            await helper.createUserAndToken()
-            const response = await execute(1)
+            await helper.generateAndSetToken({role: Role.USER})
+            const response = await execute()
             expect(response.status).toBe(403)
+            await helper.generateAndSetToken({role: Role.ORGANIZER})
         })
 
         it("should return draft", async () => {
-            await helper.createOrganizerAndToken()
-            const draft = await helper.createDraft()
-            const response = await execute(draft.id)
+            const response = await execute()
             expect(response.status).toBe(200)
-            expect(response.body).toMatchObject(TestUtils.omitDates(draft))
+            expect(response.body).toMatchObject(TestUtils.omitDates(baseDraft))
         })
 
     })

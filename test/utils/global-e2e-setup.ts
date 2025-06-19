@@ -7,6 +7,7 @@ import { resetTestDatabase } from './prisma-reset';
 declare global {
   var app: INestApplication;
   var prisma: PrismaService;
+  var testContext: { skipReset: boolean }
 }
 
 
@@ -24,20 +25,18 @@ beforeAll(async () => {
     transformOptions: { enableImplicitConversion: false },
     whitelist: true,
   }));
+
+  global.testContext = { skipReset: false };
   
   await global.app.init();
   global.prisma = global.app.get(PrismaService);
 });
 
-beforeEach(async () => {
-  await resetTestDatabase(prisma);
-  if (global.testContext) {
-        global.testContext = {};
-    }
-})
 
 afterEach(async () => {
-  await resetTestDatabase(global.prisma);
+  if (global.testContext?.skipReset === false) {
+    await resetTestDatabase(global.prisma);
+  }
 });
 
 afterAll(async () => {

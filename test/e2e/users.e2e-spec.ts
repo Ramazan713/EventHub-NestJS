@@ -1,5 +1,4 @@
 import { DateUtils } from "@/common/date.utils";
-import { PrismaService } from "@/prisma/prisma.service";
 import { GetUserEventsQueryDto } from "@/users/dto/get-user-events-query.dto";
 import { GetUserParticipantQueryDto } from "@/users/dto/get-user-participant-query.dto";
 import { Event, EventCategory, EventParticipant, ParticipantStatus, User } from "@prisma/client";
@@ -9,18 +8,12 @@ import * as request from 'supertest';
 
 
 describe("Users", () => {
-
-    let prisma: PrismaService;
     let helper: E2eHelper
 
     beforeAll(async () => {
         app = global.app;
         helper = new E2eHelper()
-        prisma = app.get(PrismaService);
     })
-
-
-
 
     describe("getEventParticipants", () => {
         let baseEvent: Event
@@ -31,17 +24,19 @@ describe("Users", () => {
         let participant2: EventParticipant
         
 
-        beforeEach(async () => {
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
             baseOrganizer = await helper.createOrganizator()
             baseEvent = await helper.createEvent({organizerId: baseOrganizer.id, id: 100})
             baseEvent2 = await helper.createEvent({organizerId: baseOrganizer.id, id: 101})
-
-
             baseUser = await helper.createUserAndToken({email: "demo@example.com", sub: 2})
-
 
             participant1 = await helper.createParticipant({eventId: baseEvent.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
             participant2 = await helper.createParticipant({eventId: baseEvent2.id, userId: baseUser.id, status: ParticipantStatus.CANCELLED})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
         })
 
         const execute = async (query: GetUserParticipantQueryDto = {}) => {
@@ -91,7 +86,8 @@ describe("Users", () => {
         let event5: Event
         let event6: Event
         
-        beforeEach(async () => {
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
             baseOrganizer = await helper.createOrganizator()
             baseUser = await helper.createUserAndToken()
 
@@ -173,6 +169,10 @@ describe("Users", () => {
             await helper.createParticipant({eventId: event4.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
             await helper.createParticipant({eventId: event5.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
             await helper.createParticipant({eventId: event6.id, userId: baseUser.id, status: ParticipantStatus.CANCELLED})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
         })
 
         const execute = async (query: GetUserEventsQueryDto = {}) => {

@@ -170,11 +170,17 @@ describe("Events", () => {
     describe("getParticipants",() => {
         let eventId: number
 
-        const createEventAndRegisterRandomUser = async ({isCancelled, price}: {isCancelled?: boolean, price?: number} = {}) => {
-            eventId = await helper.createEvent({id: 100, organizerId: helper.baseTokenPayload.sub, isCancelled, price}).then(event => event.id)
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
+            await helper.createOrganizerAndToken()
+            eventId = await helper.createEvent({id: 100, organizerId: helper.baseTokenPayload.sub}).then(event => event.id)
             const user = await createTestUser(prisma, {role: Role.USER, sub: 10000, email: "demo@example.com"})
             await registerUser(eventId, user.id)
-        }
+        })
+
+        afterAll(async () => {
+           await helper.enabledEachResetDb()
+        })
 
         const execute = async (id: number = eventId) => {
             return request(app.getHttpServer())
@@ -184,22 +190,18 @@ describe("Events", () => {
         }
 
         it("should return participants", async () => {
-            await helper.createOrganizerAndToken()
-            await createEventAndRegisterRandomUser()
             const response = await execute()
             expect(response.status).toBe(200)
             expect(response.body).toHaveLength(1)
         })
 
         it("should throw NotFoundException if event not found", async () => {
-            await helper.createOrganizerAndToken()
             const response = await execute(eventId + 1)
             expect(response.status).toBe(404)
         })
 
         it("should throw ForbiddenException if user is not an organizer", async () => {
-            await helper.createUserAndToken()
-            await createEventAndRegisterRandomUser()
+            await helper.generateAndSetToken({role: Role.USER})
             const response = await execute(eventId)
             expect(response.status).toBe(403)
         })
@@ -217,7 +219,8 @@ describe("Events", () => {
         let ticket4: Ticket
         
 
-        beforeEach(async () => {
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
             baseOrganizer = await helper.createOrganizerAndToken()
             baseEvent = await helper.createEvent({organizerId: baseOrganizer.id, id: 100, date: DateUtils.addHours({hours: 3})})
 
@@ -228,6 +231,10 @@ describe("Events", () => {
             ticket2 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser2.id, status: TicketStatus.BOOKED, paymentIntentId: "p1"})
             ticket3 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, status: TicketStatus.CANCELLED, paymentIntentId: "p3"})
             ticket4 = await helper.createTicket({eventId: baseEvent.id, userId: baseUser2.id, status: TicketStatus.REFUNDED, paymentIntentId: "p4"})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
         })
 
         const execute = async (id: number = baseEvent.id, query: GetEventTicketsQueryDto = {}) => {
@@ -283,7 +290,8 @@ describe("Events", () => {
         let participant2: EventParticipant
         
 
-        beforeEach(async () => {
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
             baseOrganizer = await helper.createOrganizerAndToken()
             baseEvent = await helper.createEvent({organizerId: baseOrganizer.id, id: 100})
 
@@ -292,6 +300,10 @@ describe("Events", () => {
 
             participant1 = await helper.createParticipant({eventId: baseEvent.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
             participant2 = await helper.createParticipant({eventId: baseEvent.id, userId: baseUser2.id, status: ParticipantStatus.CANCELLED})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
         })
 
         const execute = async (id: number = baseEvent.id, query: GetEventParticipantQueryDto = {}) => {
@@ -345,7 +357,8 @@ describe("Events", () => {
         let event4: Event
         let event5: Event
         
-        beforeEach(async () => {
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
             baseOrganizer = await helper.createOrganizerAndToken()
             event1 = await helper.createEvent({
                 organizerId: baseOrganizer.id, 
@@ -406,6 +419,10 @@ describe("Events", () => {
                 title: "C",
                 description: "C description",
             })
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
         })
 
          const execute = async (query: GetEventsQueryDto = {}) => {
@@ -544,6 +561,7 @@ describe("Events", () => {
             await helper.generateAndSetToken({role: Role.USER})
             const response = await execute()
             expect(response.status).toBe(403)
+            await helper.generateAndSetToken({role: Role.ORGANIZER})
         })
 
     })

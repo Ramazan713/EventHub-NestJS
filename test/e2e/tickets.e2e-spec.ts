@@ -396,17 +396,6 @@ describe("Tickets", () => {
                 expect(ticket?.refundedAt).toBeNull()
             })
         })
-
-        
-
-        
-
-        
-        
-
-        
-
-        
     })
 
 
@@ -421,7 +410,8 @@ describe("Tickets", () => {
         let ticket6: Ticket
         
 
-        beforeEach(async () => {
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
             baseOrganizer = await helper.createOrganizator()
             const event = await helper.createEvent({organizerId: baseOrganizer.id, id: 100, date: DateUtils.addHours({hours: 3})})
             const event2 = await helper.createEvent({organizerId: baseOrganizer.id, id: 101, date: DateUtils.addHours({hours: 1})})
@@ -435,6 +425,10 @@ describe("Tickets", () => {
             ticket4 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.CANCELLED, paymentIntentId: "p3"})
             ticket5 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.REFUNDED, paymentIntentId: "p4"})
             ticket6 = await helper.createTicket({eventId: event.id, userId: baseUser.id, status: TicketStatus.REFUND_FAILED, paymentIntentId: "p5"})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
         })
 
         const execute = async (query: GetUserTicketsQueryDto = {}) => {

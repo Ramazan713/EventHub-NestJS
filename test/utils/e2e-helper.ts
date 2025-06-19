@@ -5,6 +5,7 @@ import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { DraftEvent, Event, EventCategory, EventParticipant, ParticipantStatus, Prisma, Role, Ticket, TicketStatus, User } from "@prisma/client";
 import Stripe from "stripe";
+import { resetTestDatabase } from "./prisma-reset";
 
 
 export class E2eHelper {
@@ -50,7 +51,14 @@ export class E2eHelper {
         return this.token
     }
 
-  
+    disabledEachResetDb(){
+        global.testContext.skipReset = true
+    }  
+
+    async enabledEachResetDb(){
+        global.testContext.skipReset = false
+        await resetTestDatabase(this.prisma)
+    }
 
     async createDraft(data: Partial<Prisma.DraftEventUncheckedCreateInput> = {}): Promise<DraftEvent> {
         return await prisma.draftEvent.create({
