@@ -9,6 +9,8 @@ import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
 import { TicketWithDetailResponseDto } from './dto/ticket-with-detail-response.dto';
 import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
 import { GetEventTicketsQueryDto } from '../events/dto/get-event-tickets-query.dto';
+import { ConfigService } from '@nestjs/config';
+import { DateUtils } from '@/common/date.utils';
 
 
 
@@ -17,7 +19,8 @@ export class TicketsService {
 
     constructor(
         private prisma: PrismaService,
-        private paymentsService: PaymentsService
+        private paymentsService: PaymentsService,
+        private configService: ConfigService
     ){}
 
 
@@ -163,10 +166,16 @@ export class TicketsService {
                 id: ticketId,
                 userId,
                 status: TicketStatus.BOOKED
+            },
+            include: {
+                event: true
             }
         })
         if(!ticket){
             throw new NotFoundException("ticket not found")
+        }
+        if(ticket.event.date < DateUtils.addHours({hours: this.configService.getOrThrow<number>("CANCEL_TICKET_MIN_HOURS")})){
+            throw new BadRequestException("ticket cannot be cancelled")
         }
         const paymentIntentId = ticket.paymentIntentId
         if(!paymentIntentId){
@@ -217,7 +226,7 @@ export class TicketsService {
         await this.prisma.$transaction(async (txn) => {
              const ticketWhere: Prisma.TicketWhereUniqueInput = { paymentIntentId }
             if(status === TicketStatus.REFUNDED){
-                ticketWhere.status = TicketStatus.BOOKED
+                ticketWhere.status = {in: [TicketStatus.BOOKED, TicketStatus.REFUND_REQUESTED]}
             }
             const ticket = await txn.ticket.update({
                 where: ticketWhere,

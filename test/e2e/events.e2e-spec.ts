@@ -37,6 +37,79 @@ describe("Events", () => {
         })
     }
 
+    describe("cancelEvent", () => {
+        let baseEvent: Event
+        let baseOrganizer: User
+
+        beforeEach(async () => {
+            baseOrganizer = await helper.createOrganizerAndToken()
+            baseEvent = await helper.createEvent({id: 100, organizerId: baseOrganizer.id, isCancelled: false})
+        })
+
+
+        const execute = async (eventId: number = baseEvent.id) => {
+            return request(app.getHttpServer())
+                .post(`/events/${eventId}/cancel`)
+                .set("Authorization", `Bearer ${helper.token}`)
+                .send()
+        }
+
+        it("should cancel event", async () => {
+            const response = await execute()
+            expect(response.status).toBe(200)
+            const event = await prisma.event.findUnique({where: {id: baseEvent.id}})
+            expect(event!!.isCancelled).toBe(true)
+        })
+
+        it("should throw NotFoundException if event not found", async () => {
+            const response = await execute(baseEvent.id + 1)
+            expect(response.status).toBe(404)
+        })
+
+        it("should throw ForbiddenException if user is not organizer", async () => {
+            await helper.generateAndSetToken({role: Role.USER})
+            const response = await execute()
+            expect(response.status).toBe(403)
+        })
+
+        it("should throw NotFoundException if event is cancelled", async () => {
+            await helper.updateEvent(baseEvent.id, {isCancelled: true})
+            const response = await execute(baseEvent.id)
+            expect(response.status).toBe(404)
+        })
+
+        it("should delete draftEvents if exists", async () => {
+            const draftEvent = await helper.createDraft({organizerId: baseOrganizer.id, originalEventId: baseEvent.id})
+            const response = await execute()
+            expect(response.status).toBe(200)
+
+            const eventResponse = await prisma.draftEvent.findUnique({where: {id: draftEvent.id}})
+            expect(eventResponse).toBeNull()
+        })
+
+        it("should refund payment for all booked tickets", async () => {
+            const user2 = await helper.createUser({sub: helper.baseTokenPayload.sub + 1, email: "userx@gmail.com"})
+            await helper.createTicket({eventId: baseEvent.id, userId: user2.id, status: TicketStatus.BOOKED, paymentIntentId: "px"})
+            await helper.createTicket({eventId: baseEvent.id, userId: helper.baseTokenPayload.sub, status: TicketStatus.BOOKED, paymentIntentId: "py"})
+
+            const response = await execute()
+            expect(response.status).toBe(200)
+
+            const tickets = await prisma.ticket.findMany({where: {eventId: baseEvent.id}})
+            for(const ticket of tickets) {
+                expect(ticket.status).toBe(TicketStatus.REFUND_REQUESTED)
+            }                        
+        })
+
+        it("should throw BadRequestException if date is almost past", async () => {
+            await helper.updateEvent(baseEvent.id, {date: DateUtils.addMinutes({minutes: 5})})
+            const response = await execute()
+            expect(response.status).toBe(400)
+        })
+
+    })
+
+
     describe("event register",() => {
         let baseEventId: number
 

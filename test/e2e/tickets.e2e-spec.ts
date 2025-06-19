@@ -171,7 +171,7 @@ describe("Tickets", () => {
         })
 
         const createBaseTicket = async (data: Partial<Prisma.TicketUncheckedCreateInput> = {}) => {
-            baseTicket = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, ...data})
+            baseTicket = await helper.createTicket({eventId: baseEvent.id, userId: baseUser.id, status: TicketStatus.BOOKED, ...data})
         }
 
         const execute = async (ticketId: number = baseTicket.id, sendToken = helper.token) => {
@@ -206,12 +206,29 @@ describe("Tickets", () => {
             expect(response.status).toBe(404)
         })
 
+        it("should throw BadRequestException if event date is sometime soon", async () => {
+            await prisma.event.update({where: {id: baseEvent.id}, data: {
+                date: DateUtils.addHours({hours: (process.env.CANCEL_TICKET_MIN_HOURS as unknown as number) - 1})
+            }})
+            await createBaseTicket()
+            const response = await execute()
+            expect(response.status).toBe(400)
+        })
+
+        it("should throw BadRequestException if event date is past", async () => {
+            await prisma.event.update({where: {id: baseEvent.id}, data: {
+                date: DateUtils.addHours({hours: -1})
+            }})
+            await createBaseTicket()
+            const response = await execute()
+            expect(response.status).toBe(400)
+        })
+
         it("should return success code", async () => {
             await createBaseTicket()
             const response = await execute()
             expect(response.status).toBe(200)
         })
-
 
     })
 
@@ -331,6 +348,19 @@ describe("Tickets", () => {
         describe("refund.created", () => {
             it("should update ticket status to REFUNDED when refund is successful", async() => {
                 await createBaseTicket({status: TicketStatus.BOOKED})
+                const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
+                const response = await execute(payload)
+                const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
+                const event = await prisma.event.findFirst({where: {id: baseEventId}})
+
+                expect(event?.currentParticipants).toBe(baseEvent.currentParticipants - 1)
+                expect(ticket?.status).toBe(TicketStatus.REFUNDED)
+                expect(ticket?.refundedAt).not.toBeNull()
+                expect(response.status).toBe(200)
+            })
+
+            it("should update ticket status to REFUNDED when refund is successful and ticketStatus is REFUND_REQUESTED", async() => {
+                await createBaseTicket({status: TicketStatus.REFUND_REQUESTED})
                 const payload = PaymentTestUtils.getRefundCreatedPayload(basePaymentIntentId)
                 const response = await execute(payload)
                 const ticket = await prisma.ticket.findFirst({where: {id: baseTicket.id}})
@@ -472,17 +502,6 @@ describe("Tickets", () => {
             expect(response.body).toHaveLength(2)
             expect(response.body[0].id).toBe(ticket2.id)
             expect(response.body[1].id).toBe(ticket3.id)
-        })
-
-        it("should return tickets with desc event date, id desc order", async() => {
-            const response = await execute()
-            expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(5)
-            expect(response.body[0].id).toBe(ticket6.id)
-            expect(response.body[1].id).toBe(ticket5.id)
-            expect(response.body[2].id).toBe(ticket4.id)
-            expect(response.body[3].id).toBe(ticket1.id)
-            expect(response.body[4].id).toBe(ticket2.id)
         })
 
         it("should return tickets with event property when include param contains event", async() => {

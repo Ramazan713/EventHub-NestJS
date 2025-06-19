@@ -4,28 +4,34 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentsService } from '@/payments/payments.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { TicketStatus } from '@prisma/client';
+import { Prisma, TicketStatus } from '@prisma/client';
 import { WebhookRequest } from '@/payments/models/webhook-request.model';
 import { PaymentEvenType } from '@/payments/enums/payment-even-type.enum';
+import { DateUtils } from '@/common/date.utils';
+import { ConfigService } from '@nestjs/config';
 
 describe('TicketsService', () => {
   let service: TicketsService;
   let prisma: DeepMockProxy<PrismaService>;
   let paymentService: DeepMockProxy<PaymentsService>;
+  let configService: ConfigService
 
   beforeEach(async () => {
     prisma = mockDeep<PrismaService>();
     paymentService = mockDeep<PaymentsService>();
+    configService = mockDeep<ConfigService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TicketsService, 
+        ConfigService,
         { provide: PrismaService, useValue: prisma },
         { provide: PaymentsService, useValue: paymentService },
       ],
     }).compile();
 
     service = module.get<TicketsService>(TicketsService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   describe("createTicket", () => {
@@ -150,7 +156,19 @@ describe('TicketsService', () => {
 
     beforeEach(() => {
       jest.clearAllMocks();
+      configService.set("CANCEL_TICKET_MIN_HOURS", 10);
     });
+
+    const getTicketData = (data: Partial<Prisma.TicketUncheckedCreateInput> & {date?: Date} = {}) => ({
+      id: data?.id || ticketId,
+      userId: data?.userId || userId,
+      status:  data?.status || TicketStatus.BOOKED,
+      paymentIntentId:  data?.paymentIntentId ?? "payment intent id",
+      event: {
+         date: data?.date || DateUtils.addHours({hours: configService.get("CANCEL_TICKET_MIN_HOURS") + 1})
+      }
+    } as any)
+
 
     it("should throw NotFoundException if ticket is not found", async () => {
       prisma.ticket.findFirst.mockResolvedValue(null);
@@ -158,36 +176,26 @@ describe('TicketsService', () => {
       await expect(service.cancelTicket(ticketId, userId)).rejects.toThrow(NotFoundException);
     })
 
-    it("should throw BadRequestException if paymentIntentId is null", async () => {
-      prisma.ticket.findFirst.mockResolvedValue({
-        id: ticketId,
-        userId,
-        status: TicketStatus.RESERVED,
-        paymentIntentId: null
-      } as any);
-
+    it("should throw BadRequestException if event date is less than CANCEL_TICKET_MIN_HOURS", async () => {
+      prisma.ticket.findFirst.mockResolvedValue(
+        getTicketData({date: DateUtils.addHours({hours: configService.get("CANCEL_TICKET_MIN_HOURS") - 1})})
+      );
       await expect(service.cancelTicket(ticketId, userId)).rejects.toThrow(BadRequestException);    
     })
 
     it("should throw BadRequestException if refundPayment throws error", async () => {
-      prisma.ticket.findFirst.mockResolvedValue({
-        id: ticketId,
-        userId,
-        status: TicketStatus.BOOKED,
-        paymentIntentId: "payment intent id"
-      } as any);
+      prisma.ticket.findFirst.mockResolvedValue(
+        getTicketData()
+      );
 
       paymentService.refundPayment.mockRejectedValue(new Error())
       await expect(service.cancelTicket(ticketId, userId)).rejects.toThrow(BadRequestException);
     })
 
     it("should cancel ticket", async () => {
-      prisma.ticket.findFirst.mockResolvedValue({
-        id: ticketId,
-        userId,
-        status: TicketStatus.BOOKED,
-        paymentIntentId: "payment intent id"
-      } as any);
+      prisma.ticket.findFirst.mockResolvedValue(
+        getTicketData()
+      );
 
       await service.cancelTicket(ticketId, userId)
       expect(paymentService.refundPayment).toHaveBeenCalledTimes(1);

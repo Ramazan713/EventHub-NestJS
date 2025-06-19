@@ -97,6 +97,15 @@ export class E2eHelper {
         })
     }
 
+    async updateEvent(eventId: number, data: Partial<Prisma.EventUpdateInput> = {}): Promise<Event> {
+        return await prisma.event.update({
+            where: {
+                id: eventId
+            },
+            data: data
+        })
+    }
+
     async createTicket(data: Partial<Prisma.TicketUncheckedCreateInput> & {eventId: number} = {eventId: 1}): Promise<Ticket> {
         return await prisma.ticket.create({
             data: {

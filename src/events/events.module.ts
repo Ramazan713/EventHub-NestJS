@@ -3,11 +3,13 @@ import { EventsService } from './events.service';
 import { EventsController } from './events.controller';
 import { EventParticipantsModule } from '@/event-participants/event-participants.module';
 import { TicketsModule } from '@/tickets/tickets.module';
+import { PaymentsModule } from '@/payments/payments.module';
 
 @Module({
   imports: [
     EventParticipantsModule,
-    TicketsModule
+    TicketsModule,
+    PaymentsModule
   ],
   providers: [EventsService],
   controllers: [EventsController],

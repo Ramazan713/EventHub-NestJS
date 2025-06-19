@@ -117,6 +117,7 @@ enum TicketStatus {
   CANCELLED // Kullanıcı iptal etti veya ödeme başarısız oldu
   REFUNDED // İade edildi  
   REFUND_FAILED
+  REFUND_REQUESTED
 }
 
 enum ParticipantStatus {

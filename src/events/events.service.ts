@@ -1,16 +1,21 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { EventDto } from './dto/event.dto';
 import { EventInfoDto } from '@/common/dto/event-info.dto';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { GetUserEventsQueryDto } from '@/users/dto/get-user-events-query.dto';
 import { GetEventsQueryDto } from './dto/get-events-query.dto';
-import { ParticipantStatus, Prisma } from '@prisma/client';
+import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
+import { PaymentsService } from '@/payments/payments.service';
+import { DateUtils } from '@/common/date.utils';
 
 @Injectable()
 export class EventsService {
 
-    constructor(private prisma: PrismaService){}
+    constructor(
+        private prisma: PrismaService,
+        private paymentsService: PaymentsService
+    ){}
 
     async getEventsByOwner(organizerId: number, query: GetEventsQueryDto): Promise<EventDto[]> {
         const {orderBy, where:whereQuery} = this.getEventsArgsFromParam(query); 
@@ -53,10 +58,20 @@ export class EventsService {
                     id: eventId,
                     organizerId,
                     isCancelled: false
+                },
+                include: {
+                    tickets: {
+                        where: {
+                            status: TicketStatus.BOOKED
+                        }
+                    }
                 }
             });
             if (!event) {
-                throw new BadRequestException("Event not found");
+                throw new NotFoundException("Event not found");
+            }
+            if(event.date < DateUtils.addMinutes({minutes: 10})){
+                throw new BadRequestException("Event date is too soon to cancel")
             }
             await txn.event.update({
                 where: {
@@ -71,6 +86,27 @@ export class EventsService {
                     originalEventId: event.id
                 }
             })
+
+            await Promise.all(
+                event.tickets.map(async (ticket) => {
+                    const paymentIntentId = ticket.paymentIntentId
+                    if(paymentIntentId){
+                        await this.paymentsService.refundPayment(paymentIntentId)
+                    }
+                })
+            )
+            await Promise.all(
+                event.tickets.map(async (ticket) => {
+                   await txn.ticket.update({
+                       where: {
+                           id: ticket.id
+                       },
+                       data: {
+                           status: TicketStatus.REFUND_REQUESTED
+                       }
+                   })
+                })
+            )
             return event
         })
         return mapToDto(EventDto, event);
