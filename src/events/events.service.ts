@@ -5,28 +5,40 @@ import { EventInfoDto } from '@/common/dto/event-info.dto';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { GetUserEventsQueryDto } from '@/users/dto/get-user-events-query.dto';
 import { GetEventsQueryDto } from './dto/get-events-query.dto';
-import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
+import { Event, ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
 import { PaymentsService } from '@/payments/payments.service';
 import { DateUtils } from '@/common/date.utils';
+import { PaginationService } from '@/common/services/pagination.service';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 
 @Injectable()
 export class EventsService {
 
     constructor(
         private prisma: PrismaService,
-        private paymentsService: PaymentsService
+        private paymentsService: PaymentsService,
+        private paginationService: PaginationService
     ){}
 
-    async getEventsByOwner(organizerId: number, query: GetEventsQueryDto): Promise<EventDto[]> {
-        const {orderBy, where:whereQuery} = this.getEventsArgsFromParam(query); 
-        const events = await this.prisma.event.findMany({
-            where: {
-                organizerId,
-                ...whereQuery
-            },
-            orderBy: orderBy
-        });
-        return events.map(event => mapToDto(EventDto, event));
+    async getEventsByOwner(organizerId: number, query: GetEventsQueryDto): Promise<PaginationResult<EventDto>> {
+        const {where:whereQuery, sortBy, sortOrder} = this.getEventsArgsFromParam(query); 
+
+        const response = await this.paginationService.paginate(
+            this.prisma.event,
+            {
+                pagination: query,
+                where: {
+                    organizerId,
+                    ...whereQuery
+                },
+                sortBy,
+                sortOrder,
+                mapItems(event) {
+                    return mapToDto(EventDto, event)
+                },
+            }
+        )
+        return response
     }
 
 
@@ -135,15 +147,14 @@ export class EventsService {
 
         if(query.location) whereQuery.location = {contains: query.location, mode: "insensitive"}
 
-
-        if(query.sortBy){
-            orderBy[query.sortBy] = query.sortOrder || "desc"
-        }else{
-            orderBy["date"] = query.sortOrder || 'desc'
-        }
+        let sortBy: string =  query.sortBy || "date"
+        let sortOrder: string = query.sortOrder || "desc"
+        orderBy[sortBy] = sortOrder
         return {
             where: whereQuery,
-            orderBy: orderBy
+            orderBy: orderBy,
+            sortBy,
+            sortOrder
         } 
     }
 

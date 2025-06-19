@@ -13,6 +13,7 @@ import { Request } from 'express';
 import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
 import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.dto';
 import { GetEventsQueryDto } from './dto/get-events-query.dto';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 
 
 
@@ -33,7 +34,7 @@ export class EventsController {
     async getEvents(
         @CurrentUser() user: TokenPayload,
         @Query() query: GetEventsQueryDto
-    ): Promise<EventDto[]> {
+    ): Promise<PaginationResult<EventDto>> {
         return this.eventsService.getEventsByOwner(user.sub, query);
     }
 

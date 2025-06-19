@@ -8,6 +8,7 @@ import { DraftEventsModule } from './draft-events/draft-events.module';
 import { EventParticipantsModule } from './event-participants/event-participants.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { PaymentsModule } from './payments/payments.module';
+import { CommonModule } from './common/common.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -26,6 +27,7 @@ import * as Joi from 'joi';
     EventParticipantsModule,
     TicketsModule,
     PaymentsModule,
+    CommonModule,
   ],
 })
 export class AppModule {}

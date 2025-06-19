@@ -1,10 +1,11 @@
+import { PaginationQueryDto } from "@/common/dto/pagination-query.dto"
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe"
 import { EventCategory } from "@prisma/client"
 import { Type } from "class-transformer"
 import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, Min } from "class-validator"
 
 
-export class GetEventsQueryDto {
+export class GetEventsQueryDto extends PaginationQueryDto {
     
     @IsNotEmpty()
     @IsOptional()
