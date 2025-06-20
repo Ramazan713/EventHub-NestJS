@@ -1,9 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { EventsService } from './events.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { PaginationService } from '@/common/services/pagination.service';
 import { PaymentsService } from '@/payments/payments.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import { TicketStatus } from '@prisma/client';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { EventsService } from './events.service';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -17,6 +18,7 @@ describe('EventsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
+        PaginationService,
         { provide: PrismaService, useValue: prisma },
         { provide: PaymentsService, useValue: paymentService },
       ],

@@ -8,12 +8,17 @@ import { EventDto } from '@/events/dto/event.dto';
 import { pick } from 'lodash';
 import { DateUtils } from '@/common/date.utils';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
+import { PaginationService } from '@/common/services/pagination.service';
+import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
+import { DraftEvent } from '@prisma/client';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 
 @Injectable()
 export class DraftEventsService {
 
     constructor(
-        private prisma: PrismaService
+        private prisma: PrismaService,
+        private paginationService: PaginationService
     ){}
 
     async createDraftEvent(tokenPayload: TokenPayload,createDraftEventDto: CreateDraftEventDto) {
@@ -29,16 +34,23 @@ export class DraftEventsService {
         });
     }
 
-    async getDrafts(organizerId: number): Promise<DraftEventDto[]> {
-        const drafts = await this.prisma.draftEvent.findMany({
-            where: {
-                organizerId
-            },
-            orderBy: {
-                date: "asc"
+    async getDrafts(organizerId: number, paginationQueryDto: PaginationQueryDto): Promise<PaginationResult<DraftEventDto>> {
+        const draftsPagination = await this.paginationService.paginate(
+            this.prisma.draftEvent,
+            {
+                pagination: paginationQueryDto,
+                where: {
+                    organizerId
+                },
+                orderBy: {
+                    date: "asc"
+                },
+                mapItems(draft: DraftEvent) {
+                    return DraftEventDto.fromDraftEvent(draft)
+                },
             }
-        });
-        return drafts.map(draft => DraftEventDto.fromDraftEvent(draft));
+        )
+        return draftsPagination
     }
 
     async getDraftById(organizerId: number, id: number): Promise<DraftEventDto> {

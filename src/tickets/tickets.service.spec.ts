@@ -9,6 +9,7 @@ import { WebhookRequest } from '@/payments/models/webhook-request.model';
 import { PaymentEvenType } from '@/payments/enums/payment-even-type.enum';
 import { DateUtils } from '@/common/date.utils';
 import { ConfigService } from '@nestjs/config';
+import { PaginationService } from '@/common/services/pagination.service';
 
 describe('TicketsService', () => {
   let service: TicketsService;
@@ -25,6 +26,7 @@ describe('TicketsService', () => {
       providers: [
         TicketsService, 
         ConfigService,
+        PaginationService,
         { provide: PrismaService, useValue: prisma },
         { provide: PaymentsService, useValue: paymentService },
       ],

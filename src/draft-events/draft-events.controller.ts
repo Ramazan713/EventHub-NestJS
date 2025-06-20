@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { DraftEventsService } from './draft-events.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import { CurrentUser } from '@/auth/current-user.decorator';
@@ -8,6 +8,7 @@ import { Roles } from '@/auth/roles.decorator';
 import { RolesGuard } from '@/auth/roles.guard';
 import { Role } from '@prisma/client';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
+import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
 
 @UseGuards(RolesGuard)
 @UseGuards(JwtAuthGuard)
@@ -30,9 +31,10 @@ export class DraftEventsController {
 
     @Get()
     async getDrafts(
-        @CurrentUser() tokenPayload: TokenPayload
+        @CurrentUser() tokenPayload: TokenPayload,
+        @Query() paginationQueryDto: PaginationQueryDto
     ) {
-        return this.draftEventsService.getDrafts(tokenPayload.sub);
+        return this.draftEventsService.getDrafts(tokenPayload.sub, paginationQueryDto);
     }
 
     @HttpCode(200)

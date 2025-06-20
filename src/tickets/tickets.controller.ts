@@ -5,6 +5,7 @@ import { Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestj
 import { TicketWithDetailResponseDto } from './dto/ticket-with-detail-response.dto';
 import { TicketsService } from './tickets.service';
 import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tickets')
@@ -19,7 +20,7 @@ export class TicketsController {
     async getUserTickets(
         @CurrentUser() user: TokenPayload,
         @Query() query: GetUserTicketsQueryDto
-    ): Promise<TicketWithDetailResponseDto[]> {
+    ): Promise<PaginationResult<TicketWithDetailResponseDto>> {
         return this.ticketsService.getUserTickets(user.sub, query);
     }
 

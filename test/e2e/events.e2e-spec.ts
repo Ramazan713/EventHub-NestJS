@@ -264,8 +264,9 @@ describe("Events", () => {
 
         it("should return participants", async () => {
             const response = await execute()
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
+            expect(data).toHaveLength(1)
         })
 
         it("should throw NotFoundException if event not found", async () => {
@@ -321,30 +322,33 @@ describe("Events", () => {
         it("should return tickets with given status", async () => {
             const response = await execute(baseEvent.id, {status: TicketStatus.BOOKED})
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body[0].id).toEqual(ticket1.id)
-            expect(response.body[1].id).toEqual(ticket2.id)
+            const data = response.body.data
+            expect(data).toHaveLength(2)
+            expect(data[0].id).toEqual(ticket1.id)
+            expect(data[1].id).toEqual(ticket2.id)
         })
 
         it("should return tickets with given userId", async () => {
             const response = await execute(baseEvent.id, {userId: baseUser.id})
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body[0].id).toEqual(ticket1.id)
-            expect(response.body[1].id).toEqual(ticket3.id)
+            const data = response.body.data
+            expect(data).toHaveLength(2)
+            expect(data[0].id).toEqual(ticket1.id)
+            expect(data[1].id).toEqual(ticket3.id)
         })
 
         it("should return tickets with user when include param contains user", async () => {
             const response = await execute(baseEvent.id, {include: "user"})
             expect(response.status).toBe(200)
-            expect(response.body[0].user).not.toBeNull()
+            expect(response.body.data[0].user).not.toBeNull()
         })
 
         it("should return event tickets", async () => {
             const response = await execute()
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(4)
-            expect(response.body[0].user).toBeUndefined()
+            const data = response.body.data
+            expect(data).toHaveLength(4)
+            expect(data[0].user).toBeUndefined()
         })
 
         it("should throw NotFoundException if event not found", async () => {
@@ -390,28 +394,31 @@ describe("Events", () => {
         it("should return participants with given status", async () => {
             const response = await execute(baseEvent.id, {status: ParticipantStatus.CANCELLED})
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toEqual(participant2.id)
+            const data = response.body.data
+            expect(data).toHaveLength(1)
+            expect(data[0].id).toEqual(participant2.id)
         })
 
         it("should return participants with given userId", async () => {
             const response = await execute(baseEvent.id, {userId: baseUser.id})
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toEqual(participant1.id)
+            const data = response.body.data
+            expect(data).toHaveLength(1)
+            expect(data[0].id).toEqual(participant1.id)
         })
 
         it("should return participants with user when include param contains user", async () => {
             const response = await execute(baseEvent.id, {include: "user"})
             expect(response.status).toBe(200)
-            expect(response.body[0].user).not.toBeNull()
+            expect(response.body.data[0].user).not.toBeNull()
         })
 
         it("should return event participants", async () => {
             const response = await execute()
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body[0].user).toBeUndefined()
+            const data = response.body.data
+            expect(data).toHaveLength(2)
+            expect(data[0].user).toBeUndefined()
         })
 
         it("should throw NotFoundException if event not found", async () => {
@@ -509,125 +516,143 @@ describe("Events", () => {
         it("should return not expired and cancelled events by default", async () => {
             const response = await execute()
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            const data = response.body.data
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
         })
 
         it("should return events with given isOnline is true", async () => {
             const response = await execute({isOnline: true})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event3.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event3.id]))
         })
 
         it("should return events with given isOnline is false", async () => {
             const response = await execute({isOnline: false})
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toEqual(event1.id)
+            const data = response.body.data
+            expect(data).toHaveLength(1)
+            expect(data[0].id).toEqual(event1.id)
         })
 
         it("should return events with given category", async () => {
             const response = await execute({category: EventCategory.CONCERT})
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toEqual(event1.id)
+            const data = response.body.data
+            expect(data).toHaveLength(1)
+            expect(data[0].id).toEqual(event1.id)
         })
 
         it("should return events with given dateTo and dateFrom query", async() => {
             const response = await execute({dateTo: DateUtils.addHours({hours: 35}), dateFrom: DateUtils.addHours({hours: 10})})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id]))
         })
 
         it("should return events with given dateTo query", async() => {
             const response = await execute({dateTo: DateUtils.addHours({hours: 20})})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event2.id]))
+            expect(data).toHaveLength(1)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id]))
         })
 
         it("should return events with given dateFrom query", async() => {
             const response = await execute({dateFrom: DateUtils.addHours({hours: 20})})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
         })
 
         it("should return events with given title", async() => {
             const response = await execute({q: "NestJS"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event2.id]))
+            expect(data).toHaveLength(1)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id]))
         })
 
         it("should return events with given description", async() => {
             const response = await execute({q: "description"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
         })
 
         it("should return events with given location", async() => {
             const response = await execute({location: "locatin"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
         })
 
         it("should return events with given priceFrom", async() => {
             const response = await execute({priceFrom: 150})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id]))
+            expect(data).toHaveLength(1)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id]))
         })
 
         it("should return events with given priceTo", async() => {
             const response = await execute({priceTo: 150})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event3.id, event2.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event3.id, event2.id]))
         })
 
         it("should return events with given priceFrom and priceTo", async() => {
             const response = await execute({priceFrom: 100, priceTo: 3000})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id]))
         })
 
         it("should return events with given isCancelled is true", async() => {
             const response = await execute({isCancelled: true})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event4.id]))
+            expect(data).toHaveLength(1)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event4.id]))
         })
 
         it("should return events with given isCancelled is false", async() => {
             const response = await execute({isCancelled: false})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
         })
 
         it("should return events with given sortBy date desc", async() => {
             const response = await execute({sortBy: "date", sortOrder: "desc"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body.map(event => event.id)).toEqual([event3.id, event1.id, event2.id])
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual([event3.id, event1.id, event2.id])
         })
 
         it("should return events with given sortBy date asc", async() => {
             const response = await execute({sortBy: "date", sortOrder: "asc"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body.map(event => event.id)).toEqual([event2.id, event1.id, event3.id])
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual([event2.id, event1.id, event3.id])
         })
 
         it("should return events with given sortBy price desc", async() => {
             const response = await execute({sortBy: "price", sortOrder: "desc"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body.map(event => event.id)).toEqual([event1.id, event2.id, event3.id])
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual([event1.id, event2.id, event3.id])
         })
 
         it("should throw ForbiddenException if organizer is user role", async() => {

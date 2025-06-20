@@ -29,9 +29,8 @@ export class EventsService {
                 pagination: query,
                 where: {
                     organizerId,
-                    ...whereQuery
-                },
-                
+                    ...whereQuery,
+                } as Prisma.EventWhereInput,
                 orderBy: orderBy,
                 mapItems(event) {
                     return mapToDto(EventDto, event)
@@ -42,25 +41,32 @@ export class EventsService {
     }
 
 
-    async getUserEvents(userId: number, query: GetUserEventsQueryDto): Promise<EventInfoDto[]> {
+    async getUserEvents(userId: number, query: GetUserEventsQueryDto): Promise<PaginationResult<EventInfoDto>> {
         const {orderBy, where:whereQuery} = this.getEventsArgsFromParam(query);
-        
-        const events = await this.prisma.event.findMany({
-            where: {
-                participants: {
-                    some: {
-                        userId,
-                        status: query.status || ParticipantStatus.REGISTERED
-                    }
+        const eventsPagination = await this.paginationService.paginate(
+            this.prisma.event,
+            {
+                pagination: query,
+                where: {
+                    participants: {
+                        some: {
+                            userId,
+                            status: query.status || ParticipantStatus.REGISTERED
+                        }
+                    },
+                    ...whereQuery
                 },
-                ...whereQuery
-            },
-            include: query.include === "organizer" ? {
-                organizer: true
-            } : undefined,
-            orderBy: orderBy
-        });
-        return events.map(event => mapToDto(EventInfoDto, event));
+                include: query.include === "organizer" ? {
+                    organizer: true
+                } : undefined,
+                orderBy: orderBy,
+                mapItems(event) {
+                    return mapToDto(EventInfoDto, event)
+                },
+            }
+        )
+
+        return eventsPagination
     }
 
     async cancelEvent(organizerId: number, eventId: number): Promise<EventDto> {

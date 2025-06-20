@@ -78,7 +78,7 @@ describe("DraftEvent", () => {
             await helper.createOrganizerAndToken()
             const response = await execute()
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(0)
+            expect(response.body.data).toHaveLength(0)
         })
 
         it("should return all organizer's drafts", async () => {
@@ -90,10 +90,11 @@ describe("DraftEvent", () => {
             await helper.createDraft({title: "title4", organizerId: 2})
 
             const response = await execute()
+            const data = response.body.data
 
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body).toEqual(expect.arrayContaining([
+            expect(data).toHaveLength(2)
+            expect(data).toEqual(expect.arrayContaining([
                 expect.objectContaining({title: "title3"}),
                 expect.objectContaining({title: "title4"})
             ]))
@@ -112,9 +113,10 @@ describe("DraftEvent", () => {
             await helper.createDraft({date: DateUtils.addHours({hours: 2, currentDate})})
             await helper.createDraft({date: DateUtils.addHours({hours: 4, currentDate})})
             const response = await execute()
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(3)
-            expect(response.body).toEqual(expect.arrayContaining([
+            expect(data).toHaveLength(3)
+            expect(data).toEqual(expect.arrayContaining([
                 expect.objectContaining({date: DateUtils.addHours({hours: 2, currentDate}).toISOString()}),
                 expect.objectContaining({date: DateUtils.addHours({hours: 3, currentDate}).toISOString()}),
                 expect.objectContaining({date: DateUtils.addHours({hours: 4, currentDate}).toISOString()}),

@@ -1,3 +1,4 @@
+import { PaginationService } from '@/common/services/pagination.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -15,6 +16,7 @@ describe('EventParticipantsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventParticipantsService,
+        PaginationService,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

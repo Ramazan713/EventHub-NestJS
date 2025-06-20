@@ -471,44 +471,50 @@ describe("Tickets", () => {
 
         it("should return not expired tickets as default", async() => {
             const response = await execute()
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(5)
-            expect(response.body[0].event).toBeUndefined()
+            expect(data).toHaveLength(5)
+            expect(data[0].event).toBeUndefined()
         })
 
         it("should return REFUNDED when status is REFUNDED", async() => {
             const response = await execute({status: TicketStatus.REFUNDED})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toBe(ticket5.id)
+            expect(data).toHaveLength(1)
+            expect(data[0].id).toBe(ticket5.id)
         })
 
         it("should return tickets with dateFrom query", async() => {
             const response = await execute({dateFrom: DateUtils.addHours({hours: 2})})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(4)
+            expect(data).toHaveLength(4)
         })
 
         it("should return tickets with dateTo query", async() => {
             const response = await execute({dateTo: DateUtils.addHours({hours: 2})})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(1)
-            expect(response.body[0].id).toBe(ticket2.id)
+            expect(data).toHaveLength(1)
+            expect(data[0].id).toBe(ticket2.id)
         })
 
         it("should return tickets with dateTo and dateFrom query", async() => {
             const response = await execute({dateTo: DateUtils.addHours({hours: 2}), dateFrom: DateUtils.addHours({hours: -2})})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body).toHaveLength(2)
-            expect(response.body[0].id).toBe(ticket2.id)
-            expect(response.body[1].id).toBe(ticket3.id)
+            expect(data).toHaveLength(2)
+            expect(data[0].id).toBe(ticket2.id)
+            expect(data[1].id).toBe(ticket3.id)
         })
 
         it("should return tickets with event property when include param contains event", async() => {
             const response = await execute({include: "event"})
+            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(response.body[0].event).not.toBeNull()
-            expect(response.body[0].event.organizer).not.toBeNull()
+            expect(data[0].event).not.toBeNull()
+            expect(data[0].event.organizer).not.toBeNull()
         })
     })
 

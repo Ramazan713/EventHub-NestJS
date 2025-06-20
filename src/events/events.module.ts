@@ -1,17 +1,15 @@
-import { Module } from '@nestjs/common';
-import { EventsService } from './events.service';
-import { EventsController } from './events.controller';
 import { EventParticipantsModule } from '@/event-participants/event-participants.module';
-import { TicketsModule } from '@/tickets/tickets.module';
 import { PaymentsModule } from '@/payments/payments.module';
-import { CommonModule } from '@/common/common.module';
+import { TicketsModule } from '@/tickets/tickets.module';
+import { Module } from '@nestjs/common';
+import { EventsController } from './events.controller';
+import { EventsService } from './events.service';
 
 @Module({
   imports: [
     EventParticipantsModule,
     TicketsModule,
     PaymentsModule,
-    CommonModule
   ],
   providers: [EventsService],
   controllers: [EventsController],

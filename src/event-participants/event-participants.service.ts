@@ -5,12 +5,15 @@ import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { EventParticipantDetailResponseDto } from './dto/event-participant-detail-response.dto';
 import { GetEventParticipantQueryDto } from '@/events/dto/get-event-participant-query.dto';
 import { GetUserParticipantQueryDto } from '@/users/dto/get-user-participant-query.dto';
+import { PaginationService } from '@/common/services/pagination.service';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 
 @Injectable()
 export class EventParticipantsService {
 
     constructor(
-        private prisma: PrismaService
+        private prisma: PrismaService,
+        private paginationService: PaginationService
     ){}
 
 
@@ -116,7 +119,7 @@ export class EventParticipantsService {
         })
     }
 
-    async getRegisteredParticipants(eventId: number, organizerId: number, query: GetEventParticipantQueryDto): Promise<EventParticipantDetailResponseDto[]> {
+    async getRegisteredParticipants(eventId: number, organizerId: number, query: GetEventParticipantQueryDto): Promise<PaginationResult<EventParticipantDetailResponseDto>> {
         const whereQuery: Prisma.EventParticipantWhereInput = {}
         if(query.status) whereQuery.status = query.status
         if(query.userId) whereQuery.userId = query.userId
@@ -127,40 +130,57 @@ export class EventParticipantsService {
                 id: eventId,
                 organizerId,
             },
-            include: {
-                participants: {
-                    where: whereQuery,
-                    include: query.include === "user" ? {
-                        user: true
-                    } : undefined
-                },
-            }
         });
         if (!event) {
             throw new NotFoundException("Event not found");
         }
-        return event.participants.map(participant => mapToDto(EventParticipantDetailResponseDto, participant));
+
+        const participantsPagination = await this.paginationService.paginate(
+            this.prisma.eventParticipant,
+            {
+                where: {
+                    eventId,
+                    ...whereQuery
+                } as Prisma.EventParticipantWhereInput,
+                pagination: query,
+                include: query.include === "user" ? {
+                        user: true
+                    } : undefined,
+                mapItems(participant) {
+                    return mapToDto(EventParticipantDetailResponseDto, participant)
+                }
+            },
+        )
+
+        return participantsPagination
     }
 
-    async getUserParticipants(userId: number, query: GetUserParticipantQueryDto): Promise<EventParticipantDetailResponseDto[]> {
+    async getUserParticipants(userId: number, query: GetUserParticipantQueryDto): Promise<PaginationResult<EventParticipantDetailResponseDto>> {
         const whereQuery: Prisma.EventParticipantWhereInput = {}
         if(query.status) whereQuery.status = query.status
         if(query.eventId) whereQuery.eventId = query.eventId
 
-        const eventParticipants = await this.prisma.eventParticipant.findMany({
-            where: {
-                userId,
-                ...whereQuery,
-            },
-            include: {
-                event: query.include === "event" ? {
-                    include: {
-                        organizer: true
-                    }
-                } : undefined
+        const participantsPagination = await this.paginationService.paginate(
+            this.prisma.eventParticipant,
+            {
+                where: {
+                    userId,
+                    ...whereQuery
+                } as Prisma.EventParticipantWhereInput,
+                pagination: query,
+                include: {
+                    event: query.include === "event" ? {
+                        include: {
+                            organizer: true
+                        }
+                    } : undefined
+                },
+                mapItems(participant) {
+                    return mapToDto(EventParticipantDetailResponseDto, participant)
+                }
             }
-        });
-        return eventParticipants.map(participant => mapToDto(EventParticipantDetailResponseDto, participant));
+        )
+        return participantsPagination
     }
 
 }

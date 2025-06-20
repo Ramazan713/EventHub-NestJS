@@ -11,6 +11,8 @@ import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
 import { GetEventTicketsQueryDto } from '../events/dto/get-event-tickets-query.dto';
 import { ConfigService } from '@nestjs/config';
 import { DateUtils } from '@/common/date.utils';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
+import { PaginationService } from '@/common/services/pagination.service';
 
 
 
@@ -20,7 +22,8 @@ export class TicketsService {
     constructor(
         private prisma: PrismaService,
         private paymentsService: PaymentsService,
-        private configService: ConfigService
+        private configService: ConfigService,
+        private paginationSerivce: PaginationService
     ){}
 
 
@@ -38,7 +41,7 @@ export class TicketsService {
         return mapToDto(TicketWithDetailResponseDto, ticket)
     }
 
-    async getUserTickets(userId: number, query: GetUserTicketsQueryDto): Promise<TicketWithDetailResponseDto[]> {
+    async getUserTickets(userId: number, query: GetUserTicketsQueryDto): Promise<PaginationResult<TicketWithDetailResponseDto>> {
         const whereTicket: Prisma.TicketWhereInput = {}
 
         if(query.status) whereTicket.status = query.status
@@ -49,25 +52,35 @@ export class TicketsService {
             else eventParam.date.gte = new Date()
         whereTicket.event = eventParam
 
-        const tickets = await this.prisma.ticket.findMany({
-            where: { userId, ...whereTicket },
-            include: {
-                event: query.include == "event" ? {
-                    include: {
-                        organizer: true
-                    }
-                }: undefined
-            },
-            orderBy: {
-                event: {
-                    date: "desc"
+        const ticketsPagination = await this.paginationSerivce.paginate(
+            this.prisma.ticket,
+            {
+                where: {
+                    userId,
+                    ...whereTicket
                 },
-            }
-        })
-        return tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
+                pagination: query,
+                include: {
+                    event: query.include == "event" ? {
+                        include: {
+                            organizer: true
+                        }
+                    }: undefined
+                },
+                orderBy: {
+                    event: {
+                        date: "desc"
+                    },
+                },
+                mapItems(ticket) {
+                    return mapToDto(TicketWithDetailResponseDto, ticket)
+                }
+            },
+        )
+        return ticketsPagination
     }
 
-    async getEventTickets(eventId: number, organizerId: number, query: GetEventTicketsQueryDto): Promise<TicketWithDetailResponseDto[]> {
+    async getEventTickets(eventId: number, organizerId: number, query: GetEventTicketsQueryDto): Promise<PaginationResult<TicketWithDetailResponseDto>> {
         const whereQuery: Prisma.TicketWhereInput = {}
         if(query.status) whereQuery.status = query.status
         if(query.userId) whereQuery.userId = query.userId
@@ -76,18 +89,26 @@ export class TicketsService {
             where: {
                 id: eventId,
                 organizerId,
-            },
-            include: {
-                tickets: {
-                    where: whereQuery
-                }
             }
         })
         if(!event){
             throw new NotFoundException("event not found")
         }
-        
-        return event.tickets.map(ticket => mapToDto(TicketWithDetailResponseDto, ticket))
+
+        const ticketsPagination = await this.paginationSerivce.paginate(
+            this.prisma.ticket,
+            {
+                where: {
+                    eventId,
+                    ...whereQuery
+                } as Prisma.TicketWhereInput,
+                pagination: query,
+                mapItems(ticket) {
+                    return mapToDto(TicketWithDetailResponseDto, ticket)
+                }
+            },
+        )
+        return ticketsPagination
     }
 
     async createTicket(eventId: number, userId: number): Promise<CheckoutSession> {

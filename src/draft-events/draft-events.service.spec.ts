@@ -1,12 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '@/prisma/prisma.service';
-import { DraftEventsService } from './draft-events.service';
 import { TokenPayload } from '@/auth/token-payload.interface';
-import { DraftEvent, EventCategory, Role } from '@prisma/client';
-import { CreateDraftEventDto } from './dto/create-draft-event.dto';
-import * as moment from 'moment';
+import { PaginationService } from '@/common/services/pagination.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DraftEvent, EventCategory, Role } from '@prisma/client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import * as moment from 'moment';
+import { DraftEventsService } from './draft-events.service';
+import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 
 
@@ -23,7 +24,7 @@ describe('DraftEventsService', () => {
       providers: [
         DraftEventsService,
         { provide: PrismaService, useValue: prisma },
-        
+        PaginationService
       ],
     }).compile();
 
