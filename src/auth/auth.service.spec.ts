@@ -2,6 +2,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '@/users/users.service';
 import { AuthService } from './auth.service';
+import { HashingService } from './hashing/hashing.service';
+import { BcryptService } from './hashing/bcrypt.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -15,6 +17,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: UsersService, useValue: usersService },
         { provide: JwtService, useValue: jwtService },
+        { provide: HashingService, useClass: BcryptService }
       ],
     }).compile();
 

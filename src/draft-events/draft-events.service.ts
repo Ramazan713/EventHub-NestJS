@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
-import { TokenPayload } from '@/auth/token-payload.interface';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { DraftEventDto } from './dto/draft-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 import { EventDto } from '@/events/dto/event.dto';
@@ -21,7 +21,7 @@ export class DraftEventsService {
         private paginationService: PaginationService
     ){}
 
-    async createDraftEvent(tokenPayload: TokenPayload,createDraftEventDto: CreateDraftEventDto) {
+    async createDraftEvent(tokenPayload: ActiveUserData,createDraftEventDto: CreateDraftEventDto) {
         const minFutureDate = DateUtils.addHours();
         if(createDraftEventDto.date < minFutureDate){
             throw new BadRequestException("Date must be at least 1 hour in advance");
@@ -66,7 +66,7 @@ export class DraftEventsService {
         return DraftEventDto.fromDraftEvent(draft);
     }
 
-    async updateDraft(id: number, tokenPayload: TokenPayload, updateDraftDto: UpdateDraftEventDto): Promise<DraftEventDto> {
+    async updateDraft(id: number, tokenPayload: ActiveUserData, updateDraftDto: UpdateDraftEventDto): Promise<DraftEventDto> {
         const draft = await this.prisma.draftEvent.findFirst({
             where: {
                 id,
@@ -139,7 +139,7 @@ export class DraftEventsService {
         return mapToDto(EventDto, result)
     }
 
-    async createDraftFromEvent(tokenPayload: TokenPayload, eventId: number): Promise<DraftEventDto> {
+    async createDraftFromEvent(tokenPayload: ActiveUserData, eventId: number): Promise<DraftEventDto> {
         const event = await this.prisma.event.findFirst({
             where: {
                 id: eventId,

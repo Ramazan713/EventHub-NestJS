@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 
 
-export interface TokenPayload {
+export interface ActiveUserData {
     sub: number,
     email: string,
     role: Role

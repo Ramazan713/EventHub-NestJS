@@ -1,19 +1,19 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Query, RawBodyRequest, Req, UseGuards } from '@nestjs/common';
-import { Role } from '@prisma/client';
-import { CurrentUser } from '@/auth/current-user.decorator';
-import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { Roles } from '@/auth/roles.decorator';
-import { RolesGuard } from '@/auth/roles.guard';
-import { TokenPayload } from '@/auth/token-payload.interface';
-import { EventDto } from './dto/event.dto';
-import { EventsService } from './events.service';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { Auth } from '@/auth/decorators/auth.decorator';
+import { AuthType } from '@/auth/enums/auth-type.enum';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { TicketsService } from '@/tickets/tickets.service';
+import { Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Query, RawBodyRequest, Req } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { Request } from 'express';
-import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
+import { EventDto } from './dto/event.dto';
 import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.dto';
+import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
 import { GetEventsQueryDto } from './dto/get-events-query.dto';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
+import { EventsService } from './events.service';
 
 
 
@@ -27,57 +27,47 @@ export class EventsController {
     ){}
 
     
-    @UseGuards(RolesGuard)
     @Roles(Role.ORGANIZER, Role.ADMIN)
-    @UseGuards(JwtAuthGuard)
     @Get()
     async getEvents(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Query() query: GetEventsQueryDto
     ): Promise<PaginationResult<EventDto>> {
         return this.eventsService.getEventsByOwner(user.sub, query);
     }
 
-   
-    @UseGuards(RolesGuard)
     @Roles(Role.ORGANIZER, Role.ADMIN)
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Post(":id/cancel")
     async cancelEvent(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Param("id", ParseIntPipe) eventId: number
     ): Promise<EventDto> {
         return this.eventsService.cancelEvent(user.sub, eventId);
     }
     
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Post(":id/register")
     async registerEvent(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Param("id") eventId: number
     ){
         return this.eventParticipantsService.register(eventId, user.sub);
     }
 
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Post(":id/unregister")
     async unregisterEvent(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Param("id") eventId: number
     ){
         return this.eventParticipantsService.unregister(eventId, user.sub);
     }
 
-   
-    @UseGuards(RolesGuard)
     @Roles(Role.ORGANIZER, Role.ADMIN)
-    @UseGuards(JwtAuthGuard)
     @Get(":id/participants")
     async getParticipants(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Param("id") eventId: number,
         @Query() query: GetEventParticipantQueryDto
     ){
@@ -85,27 +75,25 @@ export class EventsController {
     }
 
     @HttpCode(201)
-    @UseGuards(JwtAuthGuard)
     @Post(":id/tickets")
     async createTicket(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Param("id") eventId: number
     ){
         return this.ticketsService.createTicket(eventId, user.sub);
     }
 
-    @UseGuards(RolesGuard)
     @Roles(Role.ORGANIZER, Role.ADMIN)
-    @UseGuards(JwtAuthGuard)
     @Get(":id/tickets")
     async getTickets(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Param("id") eventId: number,
         @Query() query: GetEventTicketsQueryDto
     ){
         return this.ticketsService.getEventTickets(eventId, user.sub, query);
     }
 
+    @Auth(AuthType.None)
     @HttpCode(200)
     @Post("webhook")
     async handlePayment(

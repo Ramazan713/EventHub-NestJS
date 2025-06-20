@@ -4,10 +4,10 @@ import { UsersService } from '@/users/users.service';
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { SignUpRequestDto } from './dto/signup-request.dto';
-import { TokenPayload } from './token-payload.interface';
+import { ActiveUserData } from './interfaces/active-user-data.interface';
+import { HashingService } from './hashing/hashing.service';
 
 
 @Injectable()
@@ -15,7 +15,8 @@ export class AuthService {
 
     constructor(
         private usersService: UsersService,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private hashingService: HashingService
     ){
 
     }
@@ -27,8 +28,7 @@ export class AuthService {
             throw new BadRequestException("user with given email already exists")
         }
 
-        const salt = await bcrypt.genSalt()
-        const hashedPassword = await bcrypt.hash(password, salt)
+        const hashedPassword = await this.hashingService.hash(password)
         const createdUser = await this.usersService.createUser(email, hashedPassword)
         const token = await this.generateToken(createdUser)
         return {
@@ -50,7 +50,7 @@ export class AuthService {
         if(!user){
             throw new UnauthorizedException("user not found or credentials are incorrect")
         }
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash)
+        const passwordMatch = await this.hashingService.compare(password, user.passwordHash)
         if(!passwordMatch){
             throw new UnauthorizedException("user not found or credentials are incorrect")
         } 
@@ -59,7 +59,7 @@ export class AuthService {
 
 
     private async generateToken(user: User | UserDto): Promise<string> {
-        const payload: TokenPayload = { sub: user.id, email: user.email, role: user.role }
+        const payload: ActiveUserData = { sub: user.id, email: user.email, role: user.role }
         return this.jwtService.signAsync(payload)
     }
 

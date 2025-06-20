@@ -426,6 +426,13 @@ describe("Events", () => {
             expect(response.status).toBe(404)
         })
 
+        it("should throw ForbiddenException if user is not an organizer", async () => {
+            await helper.generateAndSetToken({role: Role.USER})
+            const response = await execute(baseEvent.id)
+            expect(response.status).toBe(403)
+            await helper.generateAndSetToken({role: Role.ORGANIZER})
+        })
+
     })
 
 

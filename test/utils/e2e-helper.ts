@@ -1,4 +1,4 @@
-import { TokenPayload } from "@/auth/token-payload.interface";
+import { ActiveUserData } from "@/auth/interfaces/active-user-data.interface";
 import { DateUtils } from "@/common/date.utils";
 import { PrismaService } from "@/prisma/prisma.service";
 import { INestApplication } from "@nestjs/common";
@@ -25,28 +25,28 @@ export class E2eHelper {
     }
 
     async createUser(
-        tokenPayload: Partial<TokenPayload & {passwordHash?: string}> = {}
+        activeUser: Partial<ActiveUserData & {passwordHash?: string}> = {}
     ): Promise<User> {
-        const {sub, email, role} = this.getTokenPayloadOrDefault(tokenPayload)
-        return await this.prisma.user.create({ data: { id: sub, email, passwordHash: tokenPayload.passwordHash ?? "password", role} });
+        const {sub, email, role} = this.getTokenPayloadOrDefault(activeUser)
+        return await this.prisma.user.create({ data: { id: sub, email, passwordHash: activeUser.passwordHash ?? "password", role} });
     }
 
-    async createOrganizator(tokenPayload: Partial<TokenPayload & {passwordHash?: string}> = {}): Promise<User> {
-        return this.createUser({role: Role.ORGANIZER, email: "organizer@gmail.com", sub: 1000 ,...tokenPayload})
+    async createOrganizator(activeUser: Partial<ActiveUserData & {passwordHash?: string}> = {}): Promise<User> {
+        return this.createUser({role: Role.ORGANIZER, email: "organizer@gmail.com", sub: 1000 ,...activeUser})
     }
 
-    async createUserAndToken(payload: Partial<TokenPayload> = {}): Promise<User> {
+    async createUserAndToken(payload: Partial<ActiveUserData> = {}): Promise<User> {
         const newPayload = this.getTokenPayloadOrDefault({ role: Role.USER, ...payload })
         const user = await this.createUser(newPayload);
         this.token = await this.jwtService.signAsync(newPayload);
         return user
     }
 
-    async createOrganizerAndToken(payload: Partial<TokenPayload> = {}): Promise<User> {
+    async createOrganizerAndToken(payload: Partial<ActiveUserData> = {}): Promise<User> {
         return this.createUserAndToken({role: Role.ORGANIZER, ...payload})
     }
 
-    async generateAndSetToken(payload: Partial<TokenPayload>): Promise<string> {
+    async generateAndSetToken(payload: Partial<ActiveUserData>): Promise<string> {
         this.token = await this.jwtService.signAsync(this.getTokenPayloadOrDefault(payload))
         return this.token
     }
@@ -136,7 +136,7 @@ export class E2eHelper {
         })
     }
 
-    private getTokenPayloadOrDefault(payload: Partial<TokenPayload>): TokenPayload {
+    private getTokenPayloadOrDefault(payload: Partial<ActiveUserData>): ActiveUserData {
          const {
             sub      = this.baseTokenPayload.sub,
             email    = this.baseTokenPayload.email,

@@ -1,17 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { DraftEventsService } from './draft-events.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
-import { CurrentUser } from '@/auth/current-user.decorator';
-import { TokenPayload } from '@/auth/token-payload.interface';
-import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { Roles } from '@/auth/roles.decorator';
-import { RolesGuard } from '@/auth/roles.guard';
-import { Role } from '@prisma/client';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
-import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
 
-@UseGuards(RolesGuard)
-@UseGuards(JwtAuthGuard)
+
 @Roles(Role.ORGANIZER, Role.ADMIN)
 @Controller('draft-events')
 export class DraftEventsController {
@@ -24,63 +21,63 @@ export class DraftEventsController {
     @Post()
     async createDraftEvent(
         @Body() createDraftEventDto: CreateDraftEventDto,
-        @CurrentUser() tokenPayload: TokenPayload
+        @ActiveUser() activeUser: ActiveUserData
     ) {
-        return this.draftEventsService.createDraftEvent(tokenPayload, createDraftEventDto);
+        return this.draftEventsService.createDraftEvent(activeUser, createDraftEventDto);
     }
 
     @Get()
     async getDrafts(
-        @CurrentUser() tokenPayload: TokenPayload,
+        @ActiveUser() activeUser: ActiveUserData,
         @Query() paginationQueryDto: PaginationQueryDto
     ) {
-        return this.draftEventsService.getDrafts(tokenPayload.sub, paginationQueryDto);
+        return this.draftEventsService.getDrafts(activeUser.sub, paginationQueryDto);
     }
 
     @HttpCode(200)
     @Patch(":id")
     async updateDraftEvent(
-        @CurrentUser() tokenPayload: TokenPayload,
+        @ActiveUser() activeUser: ActiveUserData,
         @Param('id') id: number,
         @Body() updateDraftDto: UpdateDraftEventDto
     ) {
-        return this.draftEventsService.updateDraft(id, tokenPayload, updateDraftDto)
+        return this.draftEventsService.updateDraft(id, activeUser, updateDraftDto)
     }
     
 
     @Get(":id")
     async getDraftById(
-        @CurrentUser() tokenPayload: TokenPayload,
+        @ActiveUser() activeUser: ActiveUserData,
         @Param('id',ParseIntPipe) id: number
     ) {
-        return this.draftEventsService.getDraftById(tokenPayload.sub, id);
+        return this.draftEventsService.getDraftById(activeUser.sub, id);
     }
 
     @HttpCode(200)
     @Delete(":id")
     async deleteDraft(
-        @CurrentUser() tokenPayload: TokenPayload,
+        @ActiveUser() activeUser: ActiveUserData,
         @Param('id') id: number
     ) {
-        return this.draftEventsService.deleteDraft(id, tokenPayload.sub);
+        return this.draftEventsService.deleteDraft(id, activeUser.sub);
     }
 
     @HttpCode(200)
     @Post(":id/publish")
     async publishDraft(
-        @CurrentUser() tokenPayload: TokenPayload,
+        @ActiveUser() activeUser: ActiveUserData,
         @Param('id') id: number
     ) {
-        return this.draftEventsService.publishDraft(id, tokenPayload.sub);
+        return this.draftEventsService.publishDraft(id, activeUser.sub);
     }
 
     @HttpCode(200)  
     @Post("from-event/:eventId")
     async createDraftFromEvent(
-        @CurrentUser() tokenPayload: TokenPayload,
+        @ActiveUser() activeUser: ActiveUserData,
         @Param('eventId') eventId: number
     ) {
-        return this.draftEventsService.createDraftFromEvent(tokenPayload, eventId);    
+        return this.draftEventsService.createDraftFromEvent(activeUser, eventId);    
     }
     
 }

@@ -1,13 +1,11 @@
-import { CurrentUser } from '@/auth/current-user.decorator';
-import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { TokenPayload } from '@/auth/token-payload.interface';
-import { Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
+import { Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
 import { TicketWithDetailResponseDto } from './dto/ticket-with-detail-response.dto';
 import { TicketsService } from './tickets.service';
-import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 
-@UseGuards(JwtAuthGuard)
 @Controller('tickets')
 export class TicketsController {
 
@@ -18,7 +16,7 @@ export class TicketsController {
 
     @Get()
     async getUserTickets(
-        @CurrentUser() user: TokenPayload,
+        @ActiveUser() user: ActiveUserData,
         @Query() query: GetUserTicketsQueryDto
     ): Promise<PaginationResult<TicketWithDetailResponseDto>> {
         return this.ticketsService.getUserTickets(user.sub, query);
@@ -27,7 +25,7 @@ export class TicketsController {
     @Get(":id")
     async getUserTicketById(
         @Param("id") ticketId: number,
-        @CurrentUser() user: TokenPayload
+        @ActiveUser() user: ActiveUserData
     ): Promise<TicketWithDetailResponseDto> {
         return this.ticketsService.getUserTicketById(ticketId, user.sub);
     }
@@ -36,7 +34,7 @@ export class TicketsController {
     @Post(":id/cancel")
     async cancelTicket(
         @Param("id") ticketId: number,
-        @CurrentUser() user: TokenPayload
+        @ActiveUser() user: ActiveUserData
     ) {
         return this.ticketsService.cancelTicket(ticketId, user.sub);
     }
