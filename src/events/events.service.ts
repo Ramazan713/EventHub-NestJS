@@ -5,11 +5,12 @@ import { EventInfoDto } from '@/common/dto/event-info.dto';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { GetUserEventsQueryDto } from '@/users/dto/get-user-events-query.dto';
 import { GetEventsQueryDto } from './dto/get-events-query.dto';
-import { Event, ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
+import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
 import { PaymentsService } from '@/payments/payments.service';
 import { DateUtils } from '@/common/date.utils';
 import { PaginationService } from '@/common/services/pagination.service';
 import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
+import { SortOrder } from '@/common/enums/sort-order.enum';
 
 @Injectable()
 export class EventsService {
@@ -21,8 +22,7 @@ export class EventsService {
     ){}
 
     async getEventsByOwner(organizerId: number, query: GetEventsQueryDto): Promise<PaginationResult<EventDto>> {
-        const {where:whereQuery, sortBy, sortOrder} = this.getEventsArgsFromParam(query); 
-
+        const {where:whereQuery, orderBy} = this.getEventsArgsFromParam(query); 
         const response = await this.paginationService.paginate(
             this.prisma.event,
             {
@@ -31,8 +31,8 @@ export class EventsService {
                     organizerId,
                     ...whereQuery
                 },
-                sortBy,
-                sortOrder,
+                
+                orderBy: orderBy,
                 mapItems(event) {
                     return mapToDto(EventDto, event)
                 },
@@ -148,7 +148,7 @@ export class EventsService {
         if(query.location) whereQuery.location = {contains: query.location, mode: "insensitive"}
 
         let sortBy: string =  query.sortBy || "date"
-        let sortOrder: string = query.sortOrder || "desc"
+        let sortOrder: SortOrder = query.sortOrder || "desc"
         orderBy[sortBy] = sortOrder
         return {
             where: whereQuery,

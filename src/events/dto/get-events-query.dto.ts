@@ -1,4 +1,5 @@
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto"
+import { SortOrder } from "@/common/enums/sort-order.enum"
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe"
 import { EventCategory } from "@prisma/client"
 import { Type } from "class-transformer"
@@ -57,6 +58,7 @@ export class GetEventsQueryDto extends PaginationQueryDto {
     @IsOptional()
     sortBy?: "date" | "price" | "id"
 
+    @IsEnum(SortOrder)
     @IsOptional()
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }

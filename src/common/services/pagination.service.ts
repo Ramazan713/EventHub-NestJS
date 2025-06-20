@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PageInfoDto } from "../dto/page-info.dto";
 import { PaginationQueryDto } from "../dto/pagination-query.dto";
 import { PaginationResult } from "../interfaces/pagination-result.interface";
+import { SortOrder } from "../enums/sort-order.enum";
 
 
 @Injectable()
@@ -16,11 +17,14 @@ export class PaginationService {
             select?: any,
             sortBy?: string,
             sortOrder?: string,
+            orderBy?: any,
             mapItems?: (item: T) => Y;
         }
     ): Promise<PaginationResult<Y>> {
         const { first, last, after, before} = options.pagination;
-        const { sortBy = 'id', sortOrder = "asc" } = options
+        
+        const sortConfig = this.normalizeSortConfig(options);
+        const primarySortOrder = this.getPrimarySortOrder(sortConfig);
 
         const isForward = first != null;
         const isBackward = last != null;
@@ -37,15 +41,11 @@ export class PaginationService {
             );
         }
 
-        let effectiveSortOrder = sortOrder;
-        if (isBackward) {
-            effectiveSortOrder = sortOrder === "asc" ? "desc" : "asc";
-        }
+        // Effective sort order'ı tüm alanlar için hesapla
+        let effectiveSortConfig = this.reverseSortConfig(sortConfig, isBackward);
 
-        const orderBy = [
-            { [sortBy]: effectiveSortOrder },
-            { id: effectiveSortOrder },
-        ];
+        // Prisma orderBy formatında zaten hazır
+        const orderBy = effectiveSortConfig;
         
         let cursorWhere = {};
         
@@ -56,27 +56,28 @@ export class PaginationService {
             const beforeCursor = this.decodeCursor(before);
             
             // ORIJINAL sıralama kullan, effective değil
-            const afterOp = sortOrder === "asc" ? 'gt' : 'lt';
-            const beforeOp = sortOrder === "asc" ? 'lt' : 'gt';
+            const afterOp = primarySortOrder === "asc" ? 'gt' : 'lt';
+            const beforeOp = primarySortOrder === "asc" ? 'lt' : 'gt';
             
             cursorWhere = {
                 AND: [
-                    this.getCursorWhereQuery(afterCursor, sortBy, afterOp),
-                    this.getCursorWhereQuery(beforeCursor, sortBy, beforeOp)
+                    this.getCursorWhereQuery(afterCursor, sortConfig, afterOp),
+                    this.getCursorWhereQuery(beforeCursor, sortConfig, beforeOp)
                 ],
             };
         } else if (after) {
             // Sadece after - effective sıralama kullan
             const cursorObj = this.decodeCursor(after);
-            const cursorOp = effectiveSortOrder === "asc" ? 'gt' : 'lt';
+            const effectivePrimaryOrder = this.getPrimarySortOrder(effectiveSortConfig);
+            const cursorOp = effectivePrimaryOrder === "asc" ? 'gt' : 'lt';
             
-            cursorWhere =  this.getCursorWhereQuery(cursorObj, sortBy, cursorOp)
+            cursorWhere = this.getCursorWhereQuery(cursorObj, effectiveSortConfig, cursorOp);
         } else if (before) {
             // Sadece before - ORIJINAL sıralama kullan
             const cursorObj = this.decodeCursor(before);
-            const cursorOp = sortOrder === "asc" ? 'lt' : 'gt';
+            const cursorOp = primarySortOrder === "asc" ? 'lt' : 'gt';
             
-            cursorWhere = this.getCursorWhereQuery(cursorObj, sortBy, cursorOp)
+            cursorWhere = this.getCursorWhereQuery(cursorObj, sortConfig, cursorOp);
         }
 
         const where = {
@@ -103,8 +104,8 @@ export class PaginationService {
         let endCursor: string | undefined;
 
         if(slice.length > 0){
-            startCursor = this.encodeCursor(slice[0], sortBy);
-            endCursor = this.encodeCursor(slice[slice.length - 1], sortBy);
+            startCursor = this.encodeCursor(slice[0], sortConfig);
+            endCursor = this.encodeCursor(slice[slice.length - 1], sortConfig);
         }
 
         // PageInfo mantığını güncelle
@@ -136,26 +137,149 @@ export class PaginationService {
         };
     }
 
-    private encodeCursor(item: any, sortBy: string,): string {
-        return Buffer.from(JSON.stringify({ lastId: item.id, lastValue: item[sortBy] })).toString('base64');
+    private normalizeSortConfig(options: any): Array<Record<string, any>> {
+        // Eğer orderBy varsa onu normalize et
+        if (options.orderBy) {
+            // Eğer array değilse array yap
+            return Array.isArray(options.orderBy) ? options.orderBy : [options.orderBy];
+        }
+        
+        // Geriye dönük uyumluluk için eski parametreleri kullan
+        const sortBy = options.sortBy || 'id';
+        const sortOrder = options.sortOrder || 'asc';
+        
+        return [{ [sortBy]: sortOrder }];
+    }
+
+    private getPrimarySortOrder(sortConfig: Array<Record<string, any>>): SortOrder {
+        const firstSort = sortConfig[0];
+        const firstKey = Object.keys(firstSort)[0];
+        const value = firstSort[firstKey];
+        
+        // Eğer nested object ise (örn: { user: { name: 'asc' } })
+        // içindeki ilk order'ı al
+        if (typeof value === 'object' && value !== null) {
+            const nestedKey = Object.keys(value)[0];
+            return value[nestedKey];
+        }
+        
+        // Basit durum (örn: { name: 'asc' })
+        return value;
+    }
+
+    private encodeCursor(item: any, sortConfig: Array<Record<string, any>>): string {
+        // Tüm sıralama alanlarının değerlerini cursor'a dahil et
+        const cursorData: any = { id: item.id };
+        
+        sortConfig.forEach(sortItem => {
+            const field = Object.keys(sortItem)[0];
+            if (field !== 'id') {
+                // Nested field'lar için sadece top-level field'ı cursor'a ekle
+                // Çünkü cursor sadece primitive değerlerle çalışabilir
+                cursorData[field] = item[field];
+            }
+        });
+        
+        return Buffer.from(JSON.stringify(cursorData)).toString('base64');
     }
 
     private decodeCursor(cursor: string): any {
         return JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
     }
 
-    private getCursorWhereQuery(cursorObject: any, sortBy: string, cursorOp: string) {
-        return {
-            OR: [
-                { [sortBy]: { [cursorOp]: cursorObject.lastValue } },
-                {
-                    AND: [
-                        { [sortBy]: cursorObject.lastValue },
-                        { id: { [cursorOp]: cursorObject.lastId } },
-                    ],
-                },
-            ],
+    private getCursorWhereQuery(
+        cursorObject: any, 
+        sortConfig: Array<Record<string, any>>, 
+        cursorOp: string
+    ) {
+        // Çoklu alan sıralaması için daha karmaşık where query'si oluştur
+        const conditions: any[] = [];
+        
+        // Her sıralama alanı için koşul oluştur
+        for (let i = 0; i < sortConfig.length; i++) {
+            const currentSortItem = sortConfig[i];
+            const fieldName = Object.keys(currentSortItem)[0];
+            
+            // Nested sorting varsa cursor için kullanamayız, skip et
+            const fieldValue = currentSortItem[fieldName];
+            if (typeof fieldValue === 'object' && fieldValue !== null) {
+                continue; // Nested field'ları cursor query'sinde kullanamayız
+            }
+            
+            if (i === sortConfig.length - 1) {
+                // Son alan için direkt karşılaştırma
+                if (fieldName === 'id') {
+                    conditions.push({
+                        [fieldName]: { [cursorOp]: cursorObject.id }
+                    });
+                } else {
+                    conditions.push({
+                        OR: [
+                            { [fieldName]: { [cursorOp]: cursorObject[fieldName] } },
+                            {
+                                AND: [
+                                    { [fieldName]: cursorObject[fieldName] },
+                                    { id: { [cursorOp]: cursorObject.id } }
+                                ]
+                            }
+                        ]
+                    });
+                }
+            } else {
+                // Önceki alanlar için eşitlik koşulu + bu alan için karşılaştırma
+                const equalityConditions: any = {};
+                for (let j = 0; j < i; j++) {
+                    const prevSortItem = sortConfig[j];
+                    const prevField = Object.keys(prevSortItem)[0];
+                    const prevFieldValue = prevSortItem[prevField];
+                    
+                    // Nested field'ları skip et
+                    if (typeof prevFieldValue === 'object' && prevFieldValue !== null) {
+                        continue;
+                    }
+                    
+                    equalityConditions[prevField] = cursorObject[prevField];
+                }
+                
+                if (Object.keys(equalityConditions).length > 0) {
+                    conditions.push({
+                        AND: [
+                            equalityConditions,
+                            { [fieldName]: { [cursorOp]: cursorObject[fieldName] } }
+                        ]
+                    });
+                } else {
+                    conditions.push({
+                        [fieldName]: { [cursorOp]: cursorObject[fieldName] }
+                    });
+                }
+            }
         }
+        
+        return conditions.length === 1 ? conditions[0] : { OR: conditions };
     }
 
+    private reverseSortConfig(sortConfig: Array<Record<string, any>>, shouldReverse: boolean): Array<Record<string, any>> {
+        if (!shouldReverse) {
+            return [...sortConfig];
+        }
+
+        return sortConfig.map(sortItem => {
+            const field = Object.keys(sortItem)[0];
+            const value = sortItem[field];
+            
+            // Eğer nested object ise (örn: { user: { name: 'asc' } })
+            if (typeof value === 'object' && value !== null) {
+                const reversedNested: any = {};
+                Object.keys(value).forEach(nestedKey => {
+                    const nestedValue = value[nestedKey];
+                    reversedNested[nestedKey] = nestedValue === 'asc' ? 'desc' : 'asc';
+                });
+                return { [field]: reversedNested };
+            }
+            
+            // Basit durum (örn: { name: 'asc' })
+            return { [field]: value === 'asc' ? 'desc' : 'asc' };
+        });
+    }
 }
