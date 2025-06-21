@@ -2,10 +2,11 @@ import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { EventsService } from '@/events/events.service';
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { GetUserParticipantQueryDto } from './dto/get-user-participant-query.dto';
 import { UserEventsQueryDto } from './dto/user-events-query.dto';
 import { UsersService } from './users.service';
+import { UserEventQueryDto } from './dto/user-event.query.dto';
 
 
 @Controller('users')
@@ -39,5 +40,14 @@ export class UsersController {
         @Query() query: UserEventsQueryDto
     ){
         return this.eventService.getUserEvents(user.sub, query)
+    }
+
+    @Get("events/:id")
+    getEventById(
+        @ActiveUser() user: ActiveUserData,
+        @Param('id') id: number,
+        @Query() query: UserEventQueryDto
+    ){
+        return this.eventService.getUserEventById(user.sub, id, query)
     }
 }

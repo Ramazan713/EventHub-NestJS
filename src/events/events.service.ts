@@ -10,9 +10,10 @@ import { PaymentsService } from '@/payments/payments.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserEventsQueryDto } from '@/users/dto/user-events-query.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
+import { ParticipantStatus, Prisma, TicketStatus, User } from '@prisma/client';
 import { EventDto } from './dto/event.dto';
 import { PublicEventsQueryDto } from './dto/public-events-query.dto';
+import { PublicEventQueryDto } from './dto/public-event-query.dto';
 
 @Injectable()
 export class EventsService {
@@ -22,6 +23,50 @@ export class EventsService {
         private paymentsService: PaymentsService,
         private paginationService: PaginationService
     ){}
+
+
+    async getEventByOwnerId(organizerId: number, eventId: number): Promise<EventDto> {
+        const event = await this.prisma.event.findUnique({
+            where: {
+                id: eventId,
+                organizerId: organizerId
+            }
+        })
+        if(!event) throw new NotFoundException('Event not found')
+        return mapToDto(EventDto, event)
+    }
+
+    async getPublicEventById(eventId: number, query: PublicEventQueryDto): Promise<EventInfoDto> {
+        const event = await this.prisma.event.findUnique({
+            where: {
+                id: eventId,
+                isCancelled: false
+            },
+            include: query.include === "organizer" ? {
+                organizer: true
+            } : undefined
+        })
+        if(!event) throw new NotFoundException('Event not found')
+        return mapToDto(EventInfoDto, event)
+    }
+
+    async getUserEventById(userId: number, eventId: number, query: UserEventsQueryDto): Promise<EventInfoDto> {
+        const event = await this.prisma.event.findFirst({
+            where: {
+                id: eventId,
+                participants: {
+                    some: {
+                        userId
+                    }
+                }
+            },
+            include: query.include === "organizer" ? {
+                organizer: true
+            } : undefined
+        })
+        if(!event) throw new NotFoundException('Event not found')
+        return mapToDto(EventInfoDto, event)
+    }
 
     async getEventsByOwner(organizerId: number, query: OrganizerEventsQueryDto): Promise<PaginationResult<EventDto>> {
         const {where:whereQuery, orderBy} = this.getEventsArgsFromParam(query); 

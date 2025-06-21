@@ -1,6 +1,7 @@
 import { DateUtils } from '@/common/date.utils';
 import { GetEventParticipantQueryDto } from '@/events/dto/get-event-participant-query.dto';
 import { GetEventTicketsQueryDto } from '@/events/dto/get-event-tickets-query.dto';
+import { PublicEventQueryDto } from '@/events/dto/public-event-query.dto';
 import { PublicEventsQueryDto } from '@/events/dto/public-events-query.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Event, EventCategory, EventParticipant, ParticipantStatus, Role, Ticket, TicketStatus, User } from "@prisma/client";
@@ -713,4 +714,71 @@ describe("Events", () => {
             expect(data[0].organizer.id).toBeDefined()
         })
     })
+
+
+    describe("getPublicEventById", () => {
+        let event: Event
+        let event2: Event
+        let user1: User
+        let organizer: User
+
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
+            organizer = await helper.createOrganizator()
+            user1 = await helper.createUser()
+
+            event = await helper.createEvent({id: 100, organizerId: organizer.id, isCancelled: false})
+            event2 = await helper.createEvent({id: 101, organizerId: organizer.id, isCancelled: true})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
+        })
+
+
+       const execute = async ({id, query}:{id?: number, query?: PublicEventQueryDto} = {}, token: string | null = null) => {
+            let requestExec = request(app.getHttpServer())
+                .get(`/events/${id ?? event.id}`)
+                .query(query ?? {})
+            if(token) 
+                requestExec = requestExec.set("Authorization", `Bearer ${token}`)
+            return requestExec
+                .send()
+        }
+
+        it("should return event with given id", async() => {
+            const response = await execute({id: event.id})
+            const data = response.body
+            expect(response.status).toBe(200)
+            expect(data.id).toBe(event.id)
+        })
+
+        it("should return event with given id and include organizer", async() => {
+            const response = await execute({query: {include: "organizer"}})
+            const data = response.body
+            expect(response.status).toBe(200)
+            expect(data.id).toBe(event.id)
+            expect(data.organizer.id).toBe(organizer.id)
+        })
+
+        it("should return 404 when event with given id not found", async() => {
+            const response = await execute({id: 1000})
+            expect(response.status).toBe(404)
+        })
+
+        it("should get event when token provided", async () => {
+            await helper.generateAndSetToken({role: Role.USER, sub: user1.id})
+            const response = await execute({}, helper.token)
+            expect(response.status).toBe(200)
+        })
+
+        it("should throw NotFoundException if event is cancelled", async () => {
+            const response = await execute({id: event2.id})
+            expect(response.status).toBe(404)
+        })
+
+
+
+    })
+
 });

@@ -1,7 +1,7 @@
 import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { EventsService } from '@/events/events.service';
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { OrganizerEventsQueryDto } from './dto/organizer-events-query.dto';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
@@ -21,5 +21,13 @@ export class OrganizersController {
         @Query() query: OrganizerEventsQueryDto
     ){
         return this.eventsService.getEventsByOwner(user.sub, query)
+    }
+
+    @Get("events/:id")
+    async getEventById(
+        @ActiveUser() user: ActiveUserData,
+        @Param('id') id: number
+    ){
+        return this.eventsService.getEventByOwnerId(user.sub, id);
     }
 }

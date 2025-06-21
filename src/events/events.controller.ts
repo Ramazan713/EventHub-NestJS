@@ -15,6 +15,7 @@ import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.d
 import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
 import { PublicEventsQueryDto } from './dto/public-events-query.dto';
 import { EventsService } from './events.service';
+import { PublicEventQueryDto } from './dto/public-event-query.dto';
 
 
 
@@ -34,6 +35,15 @@ export class EventsController {
         @Query() query: PublicEventsQueryDto
     ): Promise<PaginationResult<EventInfoDto>> {
         return this.eventsService.getPublicEvents(query);
+    }
+
+    @Auth(AuthType.None)
+    @Get(":id")
+    async getEventByOwnerId(
+        @Param("id", ParseIntPipe) eventId: number,
+        @Query() query: PublicEventQueryDto
+    ) {
+        return this.eventsService.getPublicEventById(eventId, query);
     }
 
     @Roles(Role.ORGANIZER, Role.ADMIN)

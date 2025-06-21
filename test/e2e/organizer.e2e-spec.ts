@@ -270,5 +270,62 @@ describe("Organizers", () => {
         })
 
     })
+
+    describe("getEventById", () => {
+        let baseOrganizer: User
+        let otherOrganizer: User
+        let event: Event
+        let otherEvent: Event
+
+        beforeAll(async () => {
+            helper.disabledEachResetDb()
+            baseOrganizer = await helper.createOrganizerAndToken()
+            otherOrganizer = await helper.createOrganizator({email: "demo2@example.com", sub: 2000})
+            event = await helper.createEvent({organizerId: baseOrganizer.id, id: 100})
+            otherEvent = await helper.createEvent({organizerId: otherOrganizer.id, id: 101})
+        })
+
+        afterAll(async () => {
+            await helper.enabledEachResetDb()
+        })
+
+        const execute = async ({id}:{id?: number} = {}, token: string | null = helper.token) => {
+            let requestExec = request(app.getHttpServer())
+                .get(`/organizers/events/${id ?? event.id}`)
+            if(token != null) 
+                requestExec = requestExec.set("Authorization", `Bearer ${token ?? helper.token}`)
+            return requestExec
+                .send()
+        }
+
+        it("should return event with given id", async() => {
+            const response = await execute()
+            const data = response.body
+            expect(response.status).toBe(200)
+            expect(data.id).toBe(event.id)
+        })
+
+        it("should return 404 when event with given id not found", async() => {
+            const response = await execute({id: 1000})
+            expect(response.status).toBe(404)
+        })
+
+        it("should throw UnauthorizedException if token is null", async () => {
+            const response = await execute({}, null)
+            expect(response.status).toBe(401)
+        })
+
+        it("should throw NotFoundException if organizer do not create event", async () => {
+            const response = await execute({id: otherEvent.id})
+            expect(response.status).toBe(404)
+        })
+
+        it("should throw ForbiddenException if user is not an organizer", async () => {
+            await helper.generateAndSetToken({role: Role.USER})
+            const response = await execute()
+            expect(response.status).toBe(403)
+            await helper.generateAndSetToken({role: Role.ORGANIZER})
+        })
+    })
 })
 
