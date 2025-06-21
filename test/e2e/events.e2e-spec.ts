@@ -1,7 +1,7 @@
 import { DateUtils } from '@/common/date.utils';
 import { GetEventParticipantQueryDto } from '@/events/dto/get-event-participant-query.dto';
 import { GetEventTicketsQueryDto } from '@/events/dto/get-event-tickets-query.dto';
-import { GetEventsQueryDto } from '@/events/dto/get-events-query.dto';
+import { PublicEventsQueryDto } from '@/events/dto/public-events-query.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Event, EventCategory, EventParticipant, ParticipantStatus, Role, Ticket, TicketStatus, User } from "@prisma/client";
 import { E2eHelper } from '@test/utils/e2e-helper';
@@ -436,19 +436,24 @@ describe("Events", () => {
     })
 
 
-    describe("getEvents", () => {
-        let baseOrganizer: User
+    describe("getPublicEvents", () => {
+        let organizer1: User
+        let organizer2: User
         let event1: Event
         let event2: Event
         let event3: Event
         let event4: Event
         let event5: Event
+        let event6: Event
+        let event7: Event
+        let event8: Event
         
         beforeAll(async () => {
             helper.disabledEachResetDb()
-            baseOrganizer = await helper.createOrganizerAndToken()
+            organizer1 = await helper.createOrganizator()
+            organizer2 = await helper.createOrganizator({email: "organizer2@gmail.com", sub: 2000})
             event1 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 100,
                 category: EventCategory.CONCERT,
                 price: 300,
@@ -459,7 +464,7 @@ describe("Events", () => {
                 description: "description 1",
             })
             event2 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 101,
                 category: EventCategory.WORKSHOP,
                 price: 100,
@@ -471,7 +476,7 @@ describe("Events", () => {
             })
 
             event3 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 102,
                 category: EventCategory.WEBINAR,
                 price: 0,
@@ -483,7 +488,7 @@ describe("Events", () => {
             })
 
             event4 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 103,
                 category: EventCategory.OTHER,
                 price: 150,
@@ -496,7 +501,7 @@ describe("Events", () => {
             })
 
             event5 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 104,
                 category: EventCategory.WEBINAR,
                 price: 50,
@@ -506,34 +511,88 @@ describe("Events", () => {
                 title: "C",
                 description: "C description",
             })
+
+            event6 = await helper.createEvent({
+                organizerId: organizer1.id, 
+                id: 107,
+                category: EventCategory.WEBINAR,
+                price: 0,
+                date: DateUtils.addHours({hours: 40}),
+                isOnline: true,
+                location: "locatin 7",
+                title: "C#",
+                description: "C# description",
+            })
+
+            event7 = await helper.createEvent({
+                organizerId: organizer2.id, 
+                id: 111,
+                category: EventCategory.WORKSHOP,
+                price: 100,
+                date: DateUtils.addHours({hours: 25}),
+                isOnline: true,
+                location: undefined,
+                title: "NestJS",
+                description: "NestJS description",
+            })
+
+            event8 = await helper.createEvent({
+                organizerId: organizer2.id, 
+                id: 112,
+                category: EventCategory.MEETUP,
+                price: 300,
+                date: DateUtils.addHours({hours: 30}),
+                isOnline: true,
+                location: undefined,
+                title: "Microservice",
+                description: "Microservice description",
+            })
         })
 
         afterAll(async () => {
             await helper.enabledEachResetDb()
         })
 
-         const execute = async (query: GetEventsQueryDto = {}) => {
-            return request(app.getHttpServer())
+         const execute = async (query: PublicEventsQueryDto = {}, token: string | null = helper.token) => {
+            let requestExec = request(app.getHttpServer())
                 .get(`/events`)
                 .query(query)
-                .set("Authorization", `Bearer ${helper.token}`)
+            
+            if(token) 
+                requestExec = requestExec.set("Authorization", `Bearer ${token}`)
+            
+            return requestExec
                 .send()
         }
+
+        it("should return events when token set", async () => {
+            await helper.createUserAndToken()
+            const response = await execute()
+            expect(response.status).toBe(200)
+        })
 
         it("should return not expired and cancelled events by default", async () => {
             const response = await execute()
             expect(response.status).toBe(200)
             const data = response.body.data
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(6)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id, event6.id, event7.id, event8.id]))
+        })
+
+        it("should return events with organizerId query", async () => {
+            const response = await execute({organizerId: organizer2.id})
+            const data = response.body.data
+            expect(response.status).toBe(200)
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event7.id, event8.id]))
         })
 
         it("should return events with given isOnline is true", async () => {
             const response = await execute({isOnline: true})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event3.id]))
+            expect(data).toHaveLength(5)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event3.id, event6.id, event7.id, event8.id]))
         })
 
         it("should return events with given isOnline is false", async () => {
@@ -554,8 +613,8 @@ describe("Events", () => {
             const response = await execute({dateTo: DateUtils.addHours({hours: 35}), dateFrom: DateUtils.addHours({hours: 10})})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id]))
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event7.id, event8.id]))
         })
 
         it("should return events with given dateTo query", async() => {
@@ -570,106 +629,88 @@ describe("Events", () => {
             const response = await execute({dateFrom: DateUtils.addHours({hours: 20})})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
+            expect(data).toHaveLength(5)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id, event6.id, event7.id, event8.id]))
         })
 
         it("should return events with given title", async() => {
             const response = await execute({q: "NestJS"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event7.id]))
         })
 
         it("should return events with given description", async() => {
             const response = await execute({q: "description"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(6)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id, event6.id, event7.id, event8.id]))
         })
 
         it("should return events with given location", async() => {
             const response = await execute({location: "locatin"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id, event6.id]))
         })
 
         it("should return events with given priceFrom", async() => {
             const response = await execute({priceFrom: 150})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id]))
+            expect(data).toHaveLength(2)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event8.id]))
         })
 
         it("should return events with given priceTo", async() => {
             const response = await execute({priceTo: 150})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event3.id, event2.id]))
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event3.id, event2.id, event6.id, event7.id]))
         })
 
         it("should return events with given priceFrom and priceTo", async() => {
             const response = await execute({priceFrom: 100, priceTo: 3000})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id]))
-        })
-
-        it("should return events with given isCancelled is true", async() => {
-            const response = await execute({isCancelled: true})
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event4.id]))
-        })
-
-        it("should return events with given isCancelled is false", async() => {
-            const response = await execute({isCancelled: false})
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event7.id, event8.id]))
         })
 
         it("should return events with given sortBy date desc", async() => {
             const response = await execute({sortBy: "date", sortOrder: "desc"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual([event3.id, event1.id, event2.id])
+            expect(data).toHaveLength(6)
+            expect(data.map(event => event.id)).toEqual([event6.id, event3.id, event8.id, event1.id, event7.id, event2.id])
         })
 
         it("should return events with given sortBy date asc", async() => {
             const response = await execute({sortBy: "date", sortOrder: "asc"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual([event2.id, event1.id, event3.id])
+            expect(data).toHaveLength(6)
+            expect(data.map(event => event.id)).toEqual([event2.id, event7.id, event1.id, event8.id, event3.id, event6.id])
         })
 
         it("should return events with given sortBy price desc", async() => {
             const response = await execute({sortBy: "price", sortOrder: "desc"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual([event1.id, event2.id, event3.id])
+            expect(data).toHaveLength(6)
+            expect(data.map(event => event.id)).toEqual([event1.id, event8.id, event2.id, event7.id, event3.id, event6.id])
         })
 
-        it("should throw ForbiddenException if organizer is user role", async() => {
-            await helper.generateAndSetToken({role: Role.USER})
-            const response = await execute()
-            expect(response.status).toBe(403)
-            await helper.generateAndSetToken({role: Role.ORGANIZER})
+    
+        it("should return events with organizer when include param contains organizer", async() => {
+            const response = await execute({include: "organizer"})
+            const data = response.body.data
+            expect(response.status).toBe(200)
+            expect(data[0].organizer.id).toBeDefined()
         })
-
     })
-
-   
 });

@@ -3,8 +3,8 @@ import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { EventsService } from '@/events/events.service';
 import { Controller, Get, Query } from '@nestjs/common';
-import { GetUserEventsQueryDto } from './dto/get-user-events-query.dto';
 import { GetUserParticipantQueryDto } from './dto/get-user-participant-query.dto';
+import { UserEventsQueryDto } from './dto/user-events-query.dto';
 import { UsersService } from './users.service';
 
 
@@ -36,7 +36,7 @@ export class UsersController {
     @Get("events")
     getEvents(
         @ActiveUser() user: ActiveUserData,
-        @Query() query: GetUserEventsQueryDto
+        @Query() query: UserEventsQueryDto
     ){
         return this.eventService.getUserEvents(user.sub, query)
     }

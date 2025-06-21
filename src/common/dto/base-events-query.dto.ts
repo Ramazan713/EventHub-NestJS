@@ -3,11 +3,11 @@ import { SortOrder } from "@/common/enums/sort-order.enum"
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe"
 import { EventCategory } from "@prisma/client"
 import { Type } from "class-transformer"
-import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, Min } from "class-validator"
+import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from "class-validator"
 
 
-export class GetEventsQueryDto extends PaginationQueryDto {
-    
+
+export abstract class BaseEventsQueryDto extends PaginationQueryDto {
     @IsNotEmpty()
     @IsOptional()
     q?: string
@@ -45,15 +45,6 @@ export class GetEventsQueryDto extends PaginationQueryDto {
     @Min(0)
     @IsOptional()
     priceTo?: number
-
-    @IsBooleanString()
-    @IsOptional()
-    isCancelled?: boolean
-
-    @IsNumber()
-    @IsPositive()
-    @IsOptional()
-    organizerId?: number
 
     @IsOptional()
     sortBy?: "date" | "price" | "id"

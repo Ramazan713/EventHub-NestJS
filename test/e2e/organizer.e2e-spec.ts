@@ -1,13 +1,12 @@
 import { DateUtils } from "@/common/date.utils";
-import { GetUserParticipantQueryDto } from "@/users/dto/get-user-participant-query.dto";
-import { UserEventsQueryDto } from "@/users/dto/user-events-query.dto";
-import { Event, EventCategory, EventParticipant, ParticipantStatus, User } from "@prisma/client";
+import { OrganizerEventsQueryDto } from "@/organizers/dto/organizer-events-query.dto";
+import { Event, EventCategory, Role, User } from "@prisma/client";
 import { E2eHelper } from "@test/utils/e2e-helper";
 import * as request from 'supertest';
 
 
 
-describe("Users", () => {
+describe("Organizers", () => {
     let helper: E2eHelper
 
     beforeAll(async () => {
@@ -15,74 +14,9 @@ describe("Users", () => {
         helper = new E2eHelper()
     })
 
-    describe("getEventParticipants", () => {
-        let baseEvent: Event
-        let baseEvent2: Event
-        let baseUser: User
-        let baseOrganizer: User
-        let participant1: EventParticipant
-        let participant2: EventParticipant
-        
 
-        beforeAll(async () => {
-            helper.disabledEachResetDb()
-            baseOrganizer = await helper.createOrganizator()
-            baseEvent = await helper.createEvent({organizerId: baseOrganizer.id, id: 100})
-            baseEvent2 = await helper.createEvent({organizerId: baseOrganizer.id, id: 101})
-            baseUser = await helper.createUserAndToken({email: "demo@example.com", sub: 2})
-
-            participant1 = await helper.createParticipant({eventId: baseEvent.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
-            participant2 = await helper.createParticipant({eventId: baseEvent2.id, userId: baseUser.id, status: ParticipantStatus.CANCELLED})
-        })
-
-        afterAll(async () => {
-            await helper.enabledEachResetDb()
-        })
-
-        const execute = async (query: GetUserParticipantQueryDto = {}) => {
-            return request(app.getHttpServer())
-                .get(`/users/participants`)
-                .query(query)
-                .set("Authorization", `Bearer ${helper.token}`)
-                .send()
-        }
-
-        it("should return participants with given status", async () => {
-            const response = await execute({ status: ParticipantStatus.CANCELLED })
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data[0].id).toEqual(participant2.id)
-        })
-
-        it("should return participants with given eventId", async () => {
-            const response = await execute({ eventId: baseEvent2.id })
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data[0].id).toEqual(participant2.id)
-        })
-
-        it("should return participants with user when include param contains event", async () => {
-            const response = await execute({ include: "event" })
-            expect(response.status).toBe(200)
-            expect(response.body.data[0].event).not.toBeNull()
-        })
-
-        it("should return event participants", async () => {
-            const response = await execute()
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data[0].event).toBeUndefined()
-        })
-    })
-
-
-    describe("GetUserEvents", () => {
-        let baseOrganizer: User
-        let baseOrganizer2: User
-        let baseUser: User
+    describe("getEvents", () => {
+        let organizer1: User
         let event1: Event
         let event2: Event
         let event3: Event
@@ -92,12 +26,9 @@ describe("Users", () => {
         
         beforeAll(async () => {
             helper.disabledEachResetDb()
-            baseOrganizer = await helper.createOrganizator()
-            baseOrganizer2 = await helper.createOrganizator({email: "demo2@example.com", sub: 2})
-            baseUser = await helper.createUserAndToken()
-
+            organizer1 = await helper.createOrganizerAndToken()
             event1 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 100,
                 category: EventCategory.CONCERT,
                 price: 300,
@@ -108,7 +39,7 @@ describe("Users", () => {
                 description: "description 1",
             })
             event2 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 101,
                 category: EventCategory.WORKSHOP,
                 price: 100,
@@ -120,7 +51,7 @@ describe("Users", () => {
             })
 
             event3 = await helper.createEvent({
-                organizerId: baseOrganizer2.id, 
+                organizerId: organizer1.id, 
                 id: 102,
                 category: EventCategory.WEBINAR,
                 price: 0,
@@ -131,20 +62,8 @@ describe("Users", () => {
                 description: "Python description",
             })
 
-            event6 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
-                id: 107,
-                category: EventCategory.WEBINAR,
-                price: 0,
-                date: DateUtils.addHours({hours: 40}),
-                isOnline: true,
-                location: "locatin 7",
-                title: "C#",
-                description: "C# description",
-            })
-
             event4 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 103,
                 category: EventCategory.OTHER,
                 price: 150,
@@ -157,7 +76,7 @@ describe("Users", () => {
             })
 
             event5 = await helper.createEvent({
-                organizerId: baseOrganizer.id, 
+                organizerId: organizer1.id, 
                 id: 104,
                 category: EventCategory.WEBINAR,
                 price: 50,
@@ -168,50 +87,48 @@ describe("Users", () => {
                 description: "C description",
             })
 
-            await helper.createParticipant({eventId: event1.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
-            await helper.createParticipant({eventId: event2.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
-            await helper.createParticipant({eventId: event3.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
-            await helper.createParticipant({eventId: event4.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
-            await helper.createParticipant({eventId: event5.id, userId: baseUser.id, status: ParticipantStatus.REGISTERED})
-            await helper.createParticipant({eventId: event6.id, userId: baseUser.id, status: ParticipantStatus.CANCELLED})
+            event6 = await helper.createEvent({
+                organizerId: organizer1.id, 
+                id: 107,
+                category: EventCategory.WEBINAR,
+                price: 0,
+                date: DateUtils.addHours({hours: 40}),
+                isOnline: true,
+                location: "locatin 7",
+                title: "C#",
+                description: "C# description",
+            })
         })
 
         afterAll(async () => {
             await helper.enabledEachResetDb()
         })
 
-        const execute = async (query: UserEventsQueryDto = {}) => {
-            return request(app.getHttpServer())
-                .get(`/users/events`)
+
+        const execute = async (query: OrganizerEventsQueryDto = {}, token: string | null = helper.token) => {
+            let requestExec = request(app.getHttpServer())
+                .get(`/organizers/events`)
                 .query(query)
-                .set("Authorization", `Bearer ${helper.token}`)
+            if(token) 
+                requestExec = requestExec.set("Authorization", `Bearer ${token}`)
+            return requestExec
                 .send()
         }
 
-
-        it("should return events with organizerId query", async () => {
-            const response = await execute({organizerId: baseOrganizer2.id})
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event3.id]))
-        })
-
-        it("should return not expired, cancelled and registered events by default", async () => {
+        it("should return not expired and cancelled events by default", async () => {
             const response = await execute()
-            const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
-            expect(data[0].organizer).not.toBeDefined()
+            const data = response.body.data
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id, event6.id]))
         })
 
         it("should return events with given isOnline is true", async () => {
             const response = await execute({isOnline: true})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event3.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event2.id, event3.id, event6.id]))
         })
 
         it("should return events with given isOnline is false", async () => {
@@ -248,8 +165,8 @@ describe("Users", () => {
             const response = await execute({dateFrom: DateUtils.addHours({hours: 20})})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id, event6.id]))
         })
 
         it("should return events with given title", async() => {
@@ -264,16 +181,16 @@ describe("Users", () => {
             const response = await execute({q: "description"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id, event6.id]))
         })
 
         it("should return events with given location", async() => {
             const response = await execute({location: "locatin"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event3.id, event6.id]))
         })
 
         it("should return events with given priceFrom", async() => {
@@ -288,8 +205,8 @@ describe("Users", () => {
             const response = await execute({priceTo: 150})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(2)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event3.id, event2.id]))
+            expect(data).toHaveLength(3)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event3.id, event2.id, event6.id, ]))
         })
 
         it("should return events with given priceFrom and priceTo", async() => {
@@ -312,49 +229,46 @@ describe("Users", () => {
             const response = await execute({isCancelled: false})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id]))
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event1.id, event2.id, event3.id, event6.id]))
         })
 
         it("should return events with given sortBy date desc", async() => {
             const response = await execute({sortBy: "date", sortOrder: "desc"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual([event3.id, event1.id, event2.id])
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual([event6.id, event3.id, event1.id, event2.id])
         })
 
         it("should return events with given sortBy date asc", async() => {
             const response = await execute({sortBy: "date", sortOrder: "asc"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual([event2.id, event1.id, event3.id])
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual([event2.id, event1.id, event3.id, event6.id])
         })
 
         it("should return events with given sortBy price desc", async() => {
             const response = await execute({sortBy: "price", sortOrder: "desc"})
             const data = response.body.data
             expect(response.status).toBe(200)
-            expect(data).toHaveLength(3)
-            expect(data.map(event => event.id)).toEqual([event1.id, event2.id, event3.id])
+            expect(data).toHaveLength(4)
+            expect(data.map(event => event.id)).toEqual([event1.id, event2.id, event3.id, event6.id])
         })
 
-        it("should return events with given status", async() => {
-            const response = await execute({status: ParticipantStatus.CANCELLED})
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data).toHaveLength(1)
-            expect(data.map(event => event.id)).toEqual(expect.arrayContaining([event6.id]))
+        it("should throw ForbiddenException if user is not an organizer", async () => {
+            await helper.generateAndSetToken({role: Role.USER})
+            const response = await execute()
+            expect(response.status).toBe(403)
+            await helper.generateAndSetToken({role: Role.ORGANIZER})
         })
 
-        it("should return events with organizer when include param contains organizer", async() => {
-            const response = await execute({include: "organizer"})
-            const data = response.body.data
-            expect(response.status).toBe(200)
-            expect(data[0].organizer.id).toBeDefined()
+        it("should throw UnauthorizedException if token is null", async () => {
+            const response = await execute({}, null)
+            expect(response.status).toBe(401)
         })
 
     })
-
 })
+

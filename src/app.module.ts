@@ -9,6 +9,7 @@ import { EventParticipantsModule } from './event-participants/event-participants
 import { TicketsModule } from './tickets/tickets.module';
 import { PaymentsModule } from './payments/payments.module';
 import { CommonModule } from './common/common.module';
+import { OrganizersModule } from './organizers/organizers.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -28,6 +29,7 @@ import * as Joi from 'joi';
     TicketsModule,
     PaymentsModule,
     CommonModule,
+    OrganizersModule,
   ],
 })
 export class AppModule {}

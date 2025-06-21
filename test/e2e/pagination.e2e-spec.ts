@@ -1,5 +1,5 @@
 import { DateUtils } from '@/common/date.utils';
-import { GetEventsQueryDto } from '@/events/dto/get-events-query.dto';
+import { PublicEventsQueryDto } from '@/events/dto/public-events-query.dto';
 import { INestApplication } from "@nestjs/common";
 import { Event, User } from "@prisma/client";
 import { E2eHelper } from '@test/utils/e2e-helper';
@@ -36,7 +36,7 @@ describe("Pagination", () => {
             await helper.enabledEachResetDb()
         })
 
-        const execute = async (query: GetEventsQueryDto = { }) => {
+        const execute = async (query: PublicEventsQueryDto = { }) => {
             return request(app.getHttpServer())
                 .get(`/events`)
                 .query({ sortBy:"id", sortOrder: "asc", ...query })

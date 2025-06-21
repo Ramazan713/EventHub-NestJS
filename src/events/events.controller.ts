@@ -1,8 +1,9 @@
-import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 import { Auth } from '@/auth/decorators/auth.decorator';
-import { AuthType } from '@/auth/enums/auth-type.enum';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 import { Roles } from '@/auth/decorators/roles.decorator';
+import { AuthType } from '@/auth/enums/auth-type.enum';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { EventInfoDto } from '@/common/dto/event-info.dto';
 import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
 import { TicketsService } from '@/tickets/tickets.service';
@@ -12,7 +13,7 @@ import { Request } from 'express';
 import { EventDto } from './dto/event.dto';
 import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.dto';
 import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
-import { GetEventsQueryDto } from './dto/get-events-query.dto';
+import { PublicEventsQueryDto } from './dto/public-events-query.dto';
 import { EventsService } from './events.service';
 
 
@@ -26,14 +27,13 @@ export class EventsController {
         private ticketsService: TicketsService
     ){}
 
-    
-    @Roles(Role.ORGANIZER, Role.ADMIN)
+
+    @Auth(AuthType.None)
     @Get()
     async getEvents(
-        @ActiveUser() user: ActiveUserData,
-        @Query() query: GetEventsQueryDto
-    ): Promise<PaginationResult<EventDto>> {
-        return this.eventsService.getEventsByOwner(user.sub, query);
+        @Query() query: PublicEventsQueryDto
+    ): Promise<PaginationResult<EventInfoDto>> {
+        return this.eventsService.getPublicEvents(query);
     }
 
     @Roles(Role.ORGANIZER, Role.ADMIN)
