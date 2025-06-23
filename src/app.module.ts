@@ -11,6 +11,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { CommonModule } from './common/common.module';
 import { OrganizersModule } from './organizers/organizers.module';
 import * as Joi from 'joi';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 
 @Module({
   imports: [
@@ -19,6 +21,11 @@ import * as Joi from 'joi';
       validationSchema: Joi.object({
         JWT_SECRET: Joi.string().required()
       })
+    }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      typePaths: ['./**/*.graphql'],
+      graphiql: true
     }),
     AuthModule, 
     UsersModule,

@@ -1,0 +1,35 @@
+
+
+type DraftEvent {
+    id: ID!
+    title: String!
+    description: String!
+    category: EventCategory!
+
+    isOnline: Boolean!
+    price: Float!
+    capacity: Int
+    location: String
+    date: String!
+    updatedAt: String!
+    createdAt: String!
+
+    originalEventId: Int
+    organizerId: Int!
+
+    event: Event
+}
+
+type Query {
+    draftEvents: [DraftEvent!]!
+}
+
+
+enum EventCategory {
+  WORKSHOP
+  SEMINAR
+  CONCERT
+  MEETUP
+  WEBINAR
+  OTHER
+}

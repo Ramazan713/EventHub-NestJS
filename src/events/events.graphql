@@ -1,0 +1,64 @@
+
+interface IEvent {
+    id: ID!
+    title: String!
+    price: Float!
+    description: String!
+    category: EventCategory!
+    date: String!
+    updatedAt: String!
+    isOnline: Boolean!
+    location: String
+}
+
+
+type EventInfo implements IEvent {
+    id: ID!
+    title: String!
+    price: Float!
+    description: String!
+    category: EventCategory!
+    date: String!
+    updatedAt: String!
+    isOnline: Boolean!
+    location: String
+
+    organizerId: Int!
+    organizer: UserInfo!
+}
+
+type Event implements IEvent {
+    id: ID!
+    title: String!
+    price: Float!
+    description: String!
+    category: EventCategory!
+    date: String!
+    updatedAt: String!
+    isOnline: Boolean!
+    location: String
+  
+    createdAt: String!
+    isCancelled: Boolean!
+    capacity: Int
+    currentParticipants: Int!
+
+    organizerId: Int!
+    participants: [EventParticipant!]!
+    organizer: Organizer!
+    draft: DraftEvent
+    tickets: [Ticket!]!
+}
+
+type Query {
+    publicEvents: [EventInfo!]!
+}
+
+enum EventCategory {
+    WORKSHOP
+    SEMINAR
+    CONCERT
+    MEETUP
+    WEBINAR
+    OTHER
+}

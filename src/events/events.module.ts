@@ -4,6 +4,9 @@ import { TicketsModule } from '@/tickets/tickets.module';
 import { Module } from '@nestjs/common';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
+import { EventsQueryResolver } from './resolvers/events-query.resolver';
+import { EventInfoResolver } from './resolvers/event-info.resolver';
+import { EventResolver } from './resolvers/event.resolver';
 
 @Module({
   imports: [
@@ -11,7 +14,7 @@ import { EventsService } from './events.service';
     TicketsModule,
     PaymentsModule,
   ],
-  providers: [EventsService],
+  providers: [EventsService, EventsQueryResolver, EventInfoResolver, EventResolver],
   controllers: [EventsController],
   exports: [EventsService]
 })

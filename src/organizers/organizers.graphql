@@ -1,0 +1,17 @@
+
+type Organizer implements IUser {
+    id: ID!
+    email: String!
+    name: String
+
+    role: Role!
+
+    createdEvents: [Event!]!
+    registeredEvents: [EventInfo!]!
+    draftEvents: [DraftEvent!]!
+}
+
+type Query {
+    organizer: Organizer!
+    createdEvents: [Event!]!
+}

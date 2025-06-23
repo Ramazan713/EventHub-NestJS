@@ -11,6 +11,9 @@ export class EventInfoDto {
     title: string
 
     @Expose()
+    price: number
+
+    @Expose()
     description: string
 
     @Expose()
@@ -30,6 +33,9 @@ export class EventInfoDto {
 
     @Expose()
     location?: string
+
+    @Expose()
+    organizerId: number
 
     @Expose()
     @Type(() => UserInfoDto)

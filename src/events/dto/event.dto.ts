@@ -32,6 +32,9 @@ export class EventDto {
     capacity?: number
 
     @Expose()
+    currentParticipants: number
+
+    @Expose()
     isOnline: boolean 
 
     @Expose()
@@ -39,9 +42,6 @@ export class EventDto {
 
     @Expose()
     location?: string
-
-    @Expose()
-    isPublished: boolean
 
     @Expose()
     organizerId: number

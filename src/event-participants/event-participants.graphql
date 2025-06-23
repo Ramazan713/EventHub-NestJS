@@ -1,0 +1,21 @@
+
+
+type EventParticipant {
+    id: ID!
+    userId: ID!
+    eventId: ID!
+    status: ParticipantStatus!
+    registeredAt: String!
+
+    user: UserInfo!
+    event: EventInfo!
+}
+
+type Query {
+    participants(eventId: ID!): [EventParticipant!]!
+}
+
+enum ParticipantStatus {
+  REGISTERED
+  CANCELLED
+}

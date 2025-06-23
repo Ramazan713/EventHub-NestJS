@@ -1,0 +1,31 @@
+
+
+type Ticket {
+    id: ID!
+    userId: Int!
+    eventId: Int!
+    status: TicketStatus!
+    priceAtPurchase: Float!
+    paymentIntentId: String
+
+    failedReason: String
+    createdAt: String!
+    updatedAt: String!
+    paidAt: String
+    refundedAt: String
+
+    event: EventInfo!
+}
+
+type Query {
+    tickets: [Ticket!]!
+}
+
+enum TicketStatus {
+  RESERVED
+  BOOKED
+  CANCELLED
+  REFUNDED
+  REFUND_FAILED
+  REFUND_REQUESTED
+}

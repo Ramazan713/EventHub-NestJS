@@ -1,0 +1,41 @@
+
+interface IUser {
+    id: ID!
+    email: String!
+    name: String
+}
+
+type UserInfo implements IUser {
+    id: ID!
+    email: String!
+    name: String
+}
+
+type UserDetailInfo implements IUser {
+    id: ID!
+    email: String!
+    name: String
+    role: Role!
+}
+
+type User implements IUser {
+    id: ID!
+    email: String!
+    name: String
+    role: Role!
+
+    registeredEvents: [EventInfo!]!
+    tickets: [Ticket!]!
+}
+
+type Query {
+    user: User!
+    registeredEvents: [EventInfo!]!
+}
+
+
+enum Role {
+  USER
+  ORGANIZER
+  ADMIN
+}
