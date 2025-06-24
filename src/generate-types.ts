@@ -8,6 +8,7 @@ definitionFactory.generate({
     path: join(process.cwd(), "src/graphql-types.ts"),
     outputAs: "class",
     skipResolverArgs: true,
+    enumsAsTypes: true,
     defaultTypeMapping: {
         ID: "number"
     },

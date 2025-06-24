@@ -9,7 +9,7 @@ import { WebhookRequest } from '@/payments/models/webhook-request.model';
 import { PaymentEvenType } from '@/payments/enums/payment-even-type.enum';
 import { DateUtils } from '@/common/date.utils';
 import { ConfigService } from '@nestjs/config';
-import { PaginationService } from '@/common/services/pagination.service';
+import { PaginationModule } from '@/pagination/pagination.module';
 
 describe('TicketsService', () => {
   let service: TicketsService;
@@ -23,10 +23,12 @@ describe('TicketsService', () => {
     configService = mockDeep<ConfigService>();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        PaginationModule
+      ],
       providers: [
         TicketsService, 
         ConfigService,
-        PaginationService,
         { provide: PrismaService, useValue: prisma },
         { provide: PaymentsService, useValue: paymentService },
       ],

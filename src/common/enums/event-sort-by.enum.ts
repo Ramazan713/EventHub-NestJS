@@ -1,6 +1,6 @@
 
 export enum EventSortBy {
-    DATE = "DATE",
-    PRICE = "PRICE",
-    ID = "ID"
+    DATE = "date",
+    PRICE = "price",
+    ID = "id"
 }

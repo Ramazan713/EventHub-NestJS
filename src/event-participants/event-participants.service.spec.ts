@@ -1,10 +1,10 @@
-import { PaginationService } from '@/common/services/pagination.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventCategory, ParticipantStatus } from '@prisma/client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { EventParticipantsService } from './event-participants.service';
+import { PaginationModule } from '@/pagination/pagination.module';
 
 describe('EventParticipantsService', () => {
   let service: EventParticipantsService;
@@ -14,9 +14,11 @@ describe('EventParticipantsService', () => {
     prisma = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        PaginationModule
+      ],
       providers: [
         EventParticipantsService,
-        PaginationService,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

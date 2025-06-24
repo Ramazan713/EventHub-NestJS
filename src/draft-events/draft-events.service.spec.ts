@@ -1,5 +1,5 @@
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
-import { PaginationService } from '@/common/services/pagination.service';
+import { PaginationModule } from '@/pagination/pagination.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -21,10 +21,12 @@ describe('DraftEventsService', () => {
     prisma = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        PaginationModule
+      ],
       providers: [
         DraftEventsService,
         { provide: PrismaService, useValue: prisma },
-        PaginationService
       ],
     }).compile();
 

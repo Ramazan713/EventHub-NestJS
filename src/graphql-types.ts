@@ -7,46 +7,12 @@
 
 /* tslint:disable */
 /* eslint-disable */
-
-export enum EventSortBy {
-    DATE = "DATE",
-    PRICE = "PRICE",
-    ID = "ID"
-}
-
-export enum SortOrder {
-    ASC = "ASC",
-    DESC = "DESC"
-}
-
-export enum EventCategory {
-    WORKSHOP = "WORKSHOP",
-    SEMINAR = "SEMINAR",
-    CONCERT = "CONCERT",
-    MEETUP = "MEETUP",
-    WEBINAR = "WEBINAR",
-    OTHER = "OTHER"
-}
-
-export enum ParticipantStatus {
-    REGISTERED = "REGISTERED",
-    CANCELLED = "CANCELLED"
-}
-
-export enum TicketStatus {
-    RESERVED = "RESERVED",
-    BOOKED = "BOOKED",
-    CANCELLED = "CANCELLED",
-    REFUNDED = "REFUNDED",
-    REFUND_FAILED = "REFUND_FAILED",
-    REFUND_REQUESTED = "REFUND_REQUESTED"
-}
-
-export enum Role {
-    USER = "USER",
-    ORGANIZER = "ORGANIZER",
-    ADMIN = "ADMIN"
-}
+export type EventSortBy = "date" | "price" | "id";
+export type SortOrder = "asc" | "desc";
+export type EventCategory = "WORKSHOP" | "SEMINAR" | "CONCERT" | "MEETUP" | "WEBINAR" | "OTHER";
+export type ParticipantStatus = "REGISTERED" | "CANCELLED";
+export type TicketStatus = "RESERVED" | "BOOKED" | "CANCELLED" | "REFUNDED" | "REFUND_FAILED" | "REFUND_REQUESTED";
+export type Role = "USER" | "ORGANIZER" | "ADMIN";
 
 export class LoginInput {
     email: string;

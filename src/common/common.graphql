@@ -3,14 +3,11 @@ scalar Date
 
 
 enum EventSortBy {
-  DATE
-  PRICE
-  ID
+  date, price, id
 }
 
 enum SortOrder {
-  ASC
-  DESC
+  asc, desc
 }
 
 input BaseEventsQueryInput {

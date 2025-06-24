@@ -1,10 +1,11 @@
-import { PaginationQueryDto } from "@/pagination/dto/pagination-query.dto"
 import { SortOrder } from "@/common/enums/sort-order.enum"
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe"
+import { BaseEventsQueryInput } from "@/graphql-types"
+import { PaginationQueryDto } from "@/pagination/dto/pagination-query.dto"
+import { EventCategory } from "@prisma/client"
 import { Type } from "class-transformer"
 import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from "class-validator"
 import { EventSortBy } from "../enums/event-sort-by.enum"
-import { BaseEventsQueryInput, EventCategory } from "@/graphql-types"
 
 
 

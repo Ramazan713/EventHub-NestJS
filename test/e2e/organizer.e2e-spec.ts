@@ -1,4 +1,6 @@
 import { DateUtils } from "@/common/date.utils";
+import { EventSortBy } from "@/common/enums/event-sort-by.enum";
+import { SortOrder } from "@/common/enums/sort-order.enum";
 import { OrganizerEventsQueryDto } from "@/organizers/dto/organizer-events-query.dto";
 import { Event, EventCategory, Role, User } from "@prisma/client";
 import { E2eHelper } from "@test/utils/e2e-helper";
@@ -234,7 +236,7 @@ describe("Organizers", () => {
         })
 
         it("should return events with given sortBy date desc", async() => {
-            const response = await execute({sortBy: "date", sortOrder: "desc"})
+            const response = await execute({sortBy: EventSortBy.DATE, sortOrder: SortOrder.DESC})
             const data = response.body.data
             expect(response.status).toBe(200)
             expect(data).toHaveLength(4)
@@ -242,7 +244,7 @@ describe("Organizers", () => {
         })
 
         it("should return events with given sortBy date asc", async() => {
-            const response = await execute({sortBy: "date", sortOrder: "asc"})
+            const response = await execute({sortBy: EventSortBy.DATE, sortOrder: SortOrder.ASC})
             const data = response.body.data
             expect(response.status).toBe(200)
             expect(data).toHaveLength(4)
@@ -250,7 +252,7 @@ describe("Organizers", () => {
         })
 
         it("should return events with given sortBy price desc", async() => {
-            const response = await execute({sortBy: "price", sortOrder: "desc"})
+            const response = await execute({sortBy: EventSortBy.PRICE, sortOrder: SortOrder.DESC})
             const data = response.body.data
             expect(response.status).toBe(200)
             expect(data).toHaveLength(4)

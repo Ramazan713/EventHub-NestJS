@@ -1,4 +1,6 @@
 import { DateUtils } from '@/common/date.utils';
+import { EventSortBy } from '@/common/enums/event-sort-by.enum';
+import { SortOrder } from '@/common/enums/sort-order.enum';
 import { PublicEventsQueryDto } from '@/events/dto/public-events-query.dto';
 import { INestApplication } from "@nestjs/common";
 import { Event, User } from "@prisma/client";
@@ -39,7 +41,7 @@ describe("Pagination", () => {
         const execute = async (query: PublicEventsQueryDto = { }) => {
             return request(app.getHttpServer())
                 .get(`/events`)
-                .query({ sortBy:"id", sortOrder: "asc", ...query })
+                .query({ sortBy:"id", sortOrder: SortOrder.ASC, ...query })
                 .set("Authorization", `Bearer ${helper.token}`)
                 .send()
         }
@@ -98,7 +100,7 @@ describe("Pagination", () => {
         it("should return events with sortOrder desc and before pagination", async () => {
             const res = await execute({
                 last: 2,
-                sortOrder: "desc"
+                sortOrder: SortOrder.DESC
             })
             expect(res.status).toBe(200)
             const items = res.body.data
@@ -127,13 +129,13 @@ describe("Pagination", () => {
         it("should return events with beforeKey", async () => {
             const res1 = await execute({
                 last: 2,
-                sortOrder: "asc"
+                sortOrder: SortOrder.ASC
             })
             const beforeKey = res1.body.pageInfo.startCursor
             const res2 = await execute({
                 last: 2,
                 before: beforeKey,
-                sortOrder: "asc"
+                sortOrder: SortOrder.ASC
             })
             const items = res2.body.data
             expect(items).toHaveLength(2)
@@ -185,8 +187,8 @@ describe("Pagination", () => {
         it("should return all events with sorted by date desc", async () => {
             const res = await execute({
                 first: 2,
-                sortBy: "date",
-                sortOrder: "desc"
+                sortBy: EventSortBy.DATE,
+                sortOrder: SortOrder.DESC
             })
             expect(res.status).toBe(200)
             const items = res.body.data
@@ -197,8 +199,8 @@ describe("Pagination", () => {
         it("should return events with sorted by id asc", async () => {
             const res = await execute({
                 first: 2,
-                sortBy: "id",
-                sortOrder: "asc"
+                sortBy: EventSortBy.ID,
+                sortOrder: SortOrder.ASC
             })
             expect(res.status).toBe(200)
             const items = res.body.data
@@ -209,8 +211,8 @@ describe("Pagination", () => {
         it("should return events with sorted by price desc", async () => {
             const res = await execute({
                 first: 2,
-                sortBy: "price",
-                sortOrder: "desc"
+                sortBy: EventSortBy.PRICE,
+                sortOrder: SortOrder.DESC
             })
             expect(res.status).toBe(200)
             const items = res.body.data
