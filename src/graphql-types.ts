@@ -220,6 +220,13 @@ export class AuthPayload {
     user: UserDetailInfo;
 }
 
+export class PageInfo {
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+    startCursor?: Nullable<string>;
+    endCursor?: Nullable<string>;
+}
+
 export class DraftEvent {
     id: number;
     title: string;
@@ -238,20 +245,30 @@ export class DraftEvent {
 }
 
 export abstract class IQuery {
-    draftEvents?: DraftEvent[];
+    draftEvents?: DraftConnection;
     draftEventById?: DraftEvent;
-    participants?: EventParticipant[];
-    publicEvents?: EventInfo[];
+    participants?: ParticipantConnection;
+    publicEvents?: EventInfoConnection;
     publicEventById?: EventInfo;
-    eventTickets?: Ticket[];
+    eventTickets?: TicketConnection;
     organizer: Organizer;
-    createdEvents?: Event[];
+    createdEvents?: EventConnection;
     organizerEventById?: Event;
-    tickets?: Ticket[];
+    tickets?: TicketConnection;
     ticketById?: Ticket;
     user: User;
-    registeredEvents?: EventInfo[];
+    registeredEvents?: EventInfoConnection;
     userEventById?: EventInfo;
+}
+
+export class DraftEdge {
+    node: DraftEvent;
+    cursor: string;
+}
+
+export class DraftConnection {
+    edges: DraftEdge[];
+    pageInfo: PageInfo;
 }
 
 export class EventParticipant {
@@ -262,6 +279,16 @@ export class EventParticipant {
     registeredAt: string;
     user: UserInfo;
     event: EventInfo;
+}
+
+export class ParticipantEdge {
+    cursor: string;
+    node: EventParticipant;
+}
+
+export class ParticipantConnection {
+    edges: ParticipantEdge[];
+    pageInfo: PageInfo;
 }
 
 export class EventInfo implements IEvent {
@@ -293,10 +320,30 @@ export class Event implements IEvent {
     capacity?: Nullable<number>;
     currentParticipants: number;
     organizerId: number;
-    participants: EventParticipant[];
+    participants?: ParticipantConnection;
     organizer: Organizer;
     draft?: Nullable<DraftEvent>;
-    tickets: Ticket[];
+    tickets?: TicketConnection;
+}
+
+export class EventInfoEdge {
+    cursor: string;
+    node: EventInfo;
+}
+
+export class EventInfoConnection {
+    edges: EventInfoEdge[];
+    pageInfo: PageInfo;
+}
+
+export class EventEdge {
+    cursor: string;
+    node: Event;
+}
+
+export class EventConnection {
+    edges: EventEdge[];
+    pageInfo: PageInfo;
 }
 
 export class Organizer implements IUser {
@@ -304,9 +351,9 @@ export class Organizer implements IUser {
     email: string;
     name?: Nullable<string>;
     role: Role;
-    createdEvents: Event[];
-    registeredEvents: EventInfo[];
-    draftEvents: DraftEvent[];
+    createdEvents?: EventConnection;
+    registeredEvents?: EventInfoConnection;
+    draftEvents?: DraftConnection;
 }
 
 export class Ticket {
@@ -322,6 +369,16 @@ export class Ticket {
     paidAt?: Nullable<string>;
     refundedAt?: Nullable<string>;
     event: EventInfo;
+}
+
+export class TicketEdge {
+    cursor: string;
+    node: Ticket;
+}
+
+export class TicketConnection {
+    edges: TicketEdge[];
+    pageInfo: PageInfo;
 }
 
 export class CreateTicketPayload {
@@ -347,8 +404,8 @@ export class User implements IUser {
     email: string;
     name?: Nullable<string>;
     role: Role;
-    registeredEvents: EventInfo[];
-    tickets: Ticket[];
+    registeredEvents?: EventInfoConnection;
+    tickets?: TicketConnection;
 }
 
 type Nullable<T> = T | null;

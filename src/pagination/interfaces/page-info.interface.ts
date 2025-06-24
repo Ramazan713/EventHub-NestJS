@@ -1,5 +1,6 @@
 
-export class PageInfoDto {
+
+export interface PageInfo {
     hasPreviousPage: boolean;
     hasNextPage: boolean;
     startCursor?: string;

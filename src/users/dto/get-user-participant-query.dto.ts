@@ -1,4 +1,4 @@
-import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
+import { PaginationQueryDto } from "@/pagination/dto/pagination-query.dto";
 import { ParticipantStatus } from "@prisma/client";
 import { Type } from "class-transformer";
 import { IsEnum, IsNumber, IsOptional } from "class-validator";

@@ -13,6 +13,8 @@ import { OrganizersModule } from './organizers/organizers.module';
 import * as Joi from 'joi';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { PaginationService } from './pagination/services/pagination.service';
+import { PaginationModule } from './pagination/pagination.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
     PaymentsModule,
     CommonModule,
     OrganizersModule,
+    PaginationModule,
   ],
+  providers: [PaginationService],
 })
 export class AppModule {}

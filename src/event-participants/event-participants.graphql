@@ -12,7 +12,17 @@ type EventParticipant {
 }
 
 type Query {
-    participants(eventId: ID!): [EventParticipant!]!
+    participants(eventId: ID!, input: PaginationInput): ParticipantConnection!
+}
+
+type ParticipantEdge {
+    cursor: String!
+    node: EventParticipant!
+}
+
+type ParticipantConnection {
+    edges: [ParticipantEdge!]!
+    pageInfo: PageInfo!
 }
 
 enum ParticipantStatus {

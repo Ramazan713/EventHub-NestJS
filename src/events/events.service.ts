@@ -1,28 +1,28 @@
 import { DateUtils } from '@/common/date.utils';
 import { BaseEventsQueryDto } from '@/common/dto/base-events-query.dto';
 import { EventInfoDto } from '@/common/dto/event-info.dto';
+import { EventSortBy } from '@/common/enums/event-sort-by.enum';
 import { SortOrder } from '@/common/enums/sort-order.enum';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
-import { PaginationService } from '@/common/services/pagination.service';
 import { OrganizerEventsQueryDto } from '@/organizers/dto/organizer-events-query.dto';
+import { PaginationResult } from '@/pagination/interfaces/pagination-result.interface';
+import { PaginationService } from '@/pagination/services/pagination.service';
 import { PaymentsService } from '@/payments/payments.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserEventsQueryDto } from '@/users/dto/user-events-query.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ParticipantStatus, Prisma, TicketStatus, User } from '@prisma/client';
+import { ParticipantStatus, Prisma, TicketStatus } from '@prisma/client';
 import { EventDto } from './dto/event.dto';
-import { PublicEventsQueryDto } from './dto/public-events-query.dto';
 import { PublicEventQueryDto } from './dto/public-event-query.dto';
-import { EventSortBy } from '@/common/enums/event-sort-by.enum';
+import { PublicEventsQueryDto } from './dto/public-events-query.dto';
 
 @Injectable()
 export class EventsService {
 
     constructor(
-        private prisma: PrismaService,
-        private paymentsService: PaymentsService,
-        private paginationService: PaginationService
+        private readonly prisma: PrismaService,
+        private readonly paymentsService: PaymentsService,
+        private readonly paginationService: PaginationService
     ){}
 
 

@@ -7,15 +7,17 @@ import { GetUserParticipantQueryDto } from './dto/get-user-participant-query.dto
 import { UserEventsQueryDto } from './dto/user-events-query.dto';
 import { UsersService } from './users.service';
 import { UserEventQueryDto } from './dto/user-event.query.dto';
+import { RestPaginationFormatter } from '@/pagination/formetters/rest-pagination.formatter';
 
 
 @Controller('users')
 export class UsersController {
 
     constructor(
-        private usersService: UsersService,
-        private eventParticipantsService: EventParticipantsService,
-        private eventService: EventsService
+        private readonly usersService: UsersService,
+        private readonly eventParticipantsService: EventParticipantsService,
+        private readonly eventService: EventsService,
+        private readonly restFormatter: RestPaginationFormatter
     ){}
 
 
@@ -27,19 +29,21 @@ export class UsersController {
     }
 
     @Get("participants")
-    getParticipants(
+    async getParticipants(
         @ActiveUser() user: ActiveUserData,
         @Query() query: GetUserParticipantQueryDto
     ){
-        return this.eventParticipantsService.getUserParticipants(user.sub, query)
+        const response = await this.eventParticipantsService.getUserParticipants(user.sub, query)
+        return this.restFormatter.format(response)
     }
 
     @Get("events")
-    getEvents(
+    async getEvents(
         @ActiveUser() user: ActiveUserData,
         @Query() query: UserEventsQueryDto
     ){
-        return this.eventService.getUserEvents(user.sub, query)
+        const response = await this.eventService.getUserEvents(user.sub, query)
+        return this.restFormatter.format(response)
     }
 
     @Get("events/:id")

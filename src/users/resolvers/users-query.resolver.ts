@@ -1,16 +1,13 @@
-import { Auth } from '@/auth/decorators/auth.decorator';
-import { AuthType } from '@/auth/enums/auth-type.enum';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { EventsService } from '@/events/events.service';
+import { GraphQLPaginationFormatter } from '@/pagination/formetters/graphql-pagination.formatter';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ParseIntPipe } from '@nestjs/common';
 import { Args, Query, Resolver } from '@nestjs/graphql';
 import { UserEventsQueryDto } from '../dto/user-events-query.dto';
 import { UserDto } from '../dto/user.dto';
-import { ActiveUser } from '@/auth/decorators/current-user.decorator';
-import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
-import { Roles } from '@/auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
 
 
 @Resolver()
@@ -18,7 +15,8 @@ export class UsersQueryResolver {
 
     constructor(
         private readonly eventsService: EventsService,
-        private readonly prismaService: PrismaService
+        private readonly prismaService: PrismaService,
+        private readonly graphqlFormetter: GraphQLPaginationFormatter
     ){}
 
 
@@ -27,8 +25,8 @@ export class UsersQueryResolver {
         @Args("input") input: UserEventsQueryDto,
         @ActiveUser() user: ActiveUserData,
     ) {
-        const items = await this.eventsService.getEventsByOwner(user.sub,input); 
-        return items.data
+        const response = await this.eventsService.getEventsByOwner(user.sub,input); 
+        return this.graphqlFormetter.format(response);
     }
 
     @Query("userEventById")

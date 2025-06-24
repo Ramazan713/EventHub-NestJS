@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { PageInfoDto } from "../dto/page-info.dto";
 import { PaginationQueryDto } from "../dto/pagination-query.dto";
+import { CursorService } from "./cursor.service";
 import { PaginationResult } from "../interfaces/pagination-result.interface";
-import { SortOrder } from "../enums/sort-order.enum";
+import { PageInfo } from "../interfaces/page-info.interface";
 
 
 @Injectable()
 export class PaginationService {
+
+    constructor(
+        private readonly cursorService: CursorService
+    ){}
 
     async paginate<T, Y>(
         model: any,
@@ -52,8 +56,8 @@ export class PaginationService {
         // After ve Before cursor'larını işle
         if (after && before) {
             // Pencere pagination: after'dan sonra VE before'dan önce
-            const afterCursor = this.decodeCursor(after);
-            const beforeCursor = this.decodeCursor(before);
+            const afterCursor = this.cursorService.decode(after);
+            const beforeCursor = this.cursorService.decode(before);
             
             // ORIJINAL sıralama kullan, effective değil
             const afterOp = primarySortOrder === "asc" ? 'gt' : 'lt';
@@ -67,14 +71,14 @@ export class PaginationService {
             };
         } else if (after) {
             // Sadece after - effective sıralama kullan
-            const cursorObj = this.decodeCursor(after);
+            const cursorObj = this.cursorService.decode(after);
             const effectivePrimaryOrder = this.getPrimarySortOrder(effectiveSortConfig);
             const cursorOp = effectivePrimaryOrder === "asc" ? 'gt' : 'lt';
             
             cursorWhere = this.getCursorWhereQuery(cursorObj, effectiveSortConfig, cursorOp);
         } else if (before) {
             // Sadece before - ORIJINAL sıralama kullan
-            const cursorObj = this.decodeCursor(before);
+            const cursorObj = this.cursorService.decode(before);
             const cursorOp = primarySortOrder === "asc" ? 'lt' : 'gt';
             
             cursorWhere = this.getCursorWhereQuery(cursorObj, sortConfig, cursorOp);
@@ -104,8 +108,8 @@ export class PaginationService {
         let endCursor: string | undefined;
 
         if(slice.length > 0){
-            startCursor = this.encodeCursor(slice[0], sortConfig);
-            endCursor = this.encodeCursor(slice[slice.length - 1], sortConfig);
+            startCursor = this.cursorService.encode(slice[0], sortConfig);
+            endCursor = this.cursorService.encode(slice[slice.length - 1], sortConfig);
         }
 
         // PageInfo mantığını güncelle
@@ -124,7 +128,7 @@ export class PaginationService {
             hasPreviousPage = hasExtra;
         }
 
-        const pageInfo: PageInfoDto = {
+        const pageInfo: PageInfo = {
             hasNextPage,
             hasPreviousPage,
             startCursor,
@@ -133,7 +137,8 @@ export class PaginationService {
 
         return {
             data: slice.map((item) => options.mapItems ? options.mapItems(item) : item) as [Y],
-            pageInfo
+            pageInfo,
+            sortConfig
         };
     }
 
@@ -165,26 +170,6 @@ export class PaginationService {
         
         // Basit durum (örn: { name: 'asc' })
         return value?.toLowerCase();
-    }
-
-    private encodeCursor(item: any, sortConfig: Array<Record<string, any>>): string {
-        // Tüm sıralama alanlarının değerlerini cursor'a dahil et
-        const cursorData: any = { id: item.id };
-        
-        sortConfig.forEach(sortItem => {
-            const field = Object.keys(sortItem)[0];
-            if (field !== 'id') {
-                // Nested field'lar için sadece top-level field'ı cursor'a ekle
-                // Çünkü cursor sadece primitive değerlerle çalışabilir
-                cursorData[field] = item[field];
-            }
-        });
-        
-        return Buffer.from(JSON.stringify(cursorData)).toString('base64');
-    }
-
-    private decodeCursor(cursor: string): any {
-        return JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
     }
 
     private getCursorWhereQuery(

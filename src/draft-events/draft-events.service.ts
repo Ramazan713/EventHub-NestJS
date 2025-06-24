@@ -8,17 +8,17 @@ import { EventDto } from '@/events/dto/event.dto';
 import { pick } from 'lodash';
 import { DateUtils } from '@/common/date.utils';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
-import { PaginationService } from '@/common/services/pagination.service';
-import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '@/pagination/dto/pagination-query.dto';
 import { DraftEvent } from '@prisma/client';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
+import { PaginationService } from '@/pagination/services/pagination.service';
+import { PaginationResult } from '@/pagination/interfaces/pagination-result.interface';
 
 @Injectable()
 export class DraftEventsService {
 
     constructor(
-        private prisma: PrismaService,
-        private paginationService: PaginationService
+        private readonly prisma: PrismaService,
+        private readonly paginationService: PaginationService
     ){}
 
     async createDraftEvent(tokenPayload: ActiveUserData,createDraftEventDto: CreateDraftEventDto) {

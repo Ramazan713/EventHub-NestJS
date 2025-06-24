@@ -21,7 +21,7 @@ type DraftEvent {
 }
 
 type Query {
-  draftEvents(input: DraftEventQueryInput): [DraftEvent!]!
+  draftEvents(input: DraftEventQueryInput): DraftConnection!
   draftEventById(id: ID!): DraftEvent!
 }
 
@@ -31,6 +31,16 @@ type Mutation {
   deleteDraft(id: ID!): DraftEvent!
   publishDraft(id: ID!): DraftEvent!
   createDraftFromEvent(eventId: ID!): DraftEvent!
+}
+
+type DraftEdge {
+  node: DraftEvent!
+  cursor: String!
+}
+
+type DraftConnection {
+  edges: [DraftEdge!]!
+  pageInfo: PageInfo!
 }
 
 input DraftEventQueryInput {

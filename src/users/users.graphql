@@ -24,13 +24,13 @@ type User implements IUser {
     name: String
     role: Role!
 
-    registeredEvents: [EventInfo!]!
-    tickets: [Ticket!]!
+    registeredEvents(input: UserEventsQueryInput): EventInfoConnection!
+    tickets(input: UserTicketQueryInput): TicketConnection!
 }
 
 type Query {
     user: User!
-    registeredEvents(input: UserEventsQueryInput): [EventInfo!]!
+    registeredEvents(input: UserEventsQueryInput): EventInfoConnection!
     userEventById(id: ID!): EventInfo!
 }
 

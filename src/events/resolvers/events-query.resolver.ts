@@ -10,6 +10,7 @@ import { Role } from '@prisma/client';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { GraphQLPaginationFormatter } from '@/pagination/formetters/graphql-pagination.formatter';
 
 
 @Resolver()
@@ -17,7 +18,8 @@ export class EventsQueryResolver {
 
     constructor(
         private readonly eventsService: EventsService,
-        private readonly ticketsService: TicketsService
+        private readonly ticketsService: TicketsService,
+        private readonly graphqlFormetter: GraphQLPaginationFormatter
     ) {}
 
     @Auth(AuthType.None)
@@ -25,8 +27,8 @@ export class EventsQueryResolver {
     async getPublicEvents(
         @Args("input") input: PublicEventsQueryDto,
     ) {
-        const results = await this.eventsService.getPublicEvents(input);
-        return results.data;
+        const response = await this.eventsService.getPublicEvents(input);
+        return this.graphqlFormetter.format(response);
     }
 
     @Auth(AuthType.None)
@@ -44,7 +46,8 @@ export class EventsQueryResolver {
         @Args("input") input: GetEventTicketsQueryDto,
         @ActiveUser() user: ActiveUserData
     ) {
-        return this.ticketsService.getEventTickets(eventId, user.sub,input);
+        const response = await this.ticketsService.getEventTickets(eventId, user.sub, input);
+        return this.graphqlFormetter.format(response);
     }
 
 }

@@ -44,23 +44,43 @@ type Event implements IEvent {
     currentParticipants: Int!
 
     organizerId: Int!
-    participants: [EventParticipant!]!
+    participants(input: PaginationInput): ParticipantConnection!
     organizer: Organizer!
     draft: DraftEvent
-    tickets: [Ticket!]!
+    tickets(input: PaginationInput): TicketConnection!
 }
 
 
 type Query {
-    publicEvents(input: PublicEventsQueryInput): [EventInfo!]!
+    publicEvents(input: PublicEventsQueryInput): EventInfoConnection!
     publicEventById(id: Int!): EventInfo!
-    eventTickets(eventId: ID!, input: EventTicketsQueryInput): [Ticket!]!
+    eventTickets(eventId: ID!, input: EventTicketsQueryInput): TicketConnection!
 }
 
 type Mutation {
     cancelEvent(id: ID!): Event!
     registerEvent(id: ID!): Boolean!
     unregisterEvent(id: ID!): Boolean!
+}
+
+type EventInfoEdge {
+    cursor: String!
+    node: EventInfo!
+}
+
+type EventInfoConnection {
+    edges: [EventInfoEdge!]!
+    pageInfo: PageInfo!
+}
+
+type EventEdge {
+    cursor: String!
+    node: Event!
+}
+
+type EventConnection {
+    edges: [EventEdge!]!
+    pageInfo: PageInfo!
 }
 
 input PublicEventsQueryInput {

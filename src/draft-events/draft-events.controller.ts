@@ -1,12 +1,13 @@
 import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
-import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
+import { PaginationQueryDto } from '@/pagination/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { DraftEventsService } from './draft-events.service';
 import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
+import { RestPaginationFormatter } from '@/pagination/formetters/rest-pagination.formatter';
 
 
 @Roles(Role.ORGANIZER, Role.ADMIN)
@@ -14,7 +15,8 @@ import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 export class DraftEventsController {
 
     constructor(
-        private draftEventsService: DraftEventsService
+        private readonly draftEventsService: DraftEventsService,
+        private readonly restFormatter: RestPaginationFormatter
     ){}
 
     @HttpCode(201)
@@ -31,7 +33,8 @@ export class DraftEventsController {
         @ActiveUser() activeUser: ActiveUserData,
         @Query() paginationQueryDto: PaginationQueryDto
     ) {
-        return this.draftEventsService.getDrafts(activeUser.sub, paginationQueryDto);
+        const response = await this.draftEventsService.getDrafts(activeUser.sub, paginationQueryDto);
+        return this.restFormatter.format(response);
     }
 
     @HttpCode(200)

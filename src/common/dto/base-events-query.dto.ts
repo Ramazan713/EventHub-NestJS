@@ -1,4 +1,4 @@
-import { PaginationQueryDto } from "@/common/dto/pagination-query.dto"
+import { PaginationQueryDto } from "@/pagination/dto/pagination-query.dto"
 import { SortOrder } from "@/common/enums/sort-order.enum"
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe"
 import { Type } from "class-transformer"

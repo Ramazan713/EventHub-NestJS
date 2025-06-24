@@ -1,19 +1,19 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { ParticipantStatus, Prisma } from '@prisma/client';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
-import { EventParticipantDetailResponseDto } from './dto/event-participant-detail-response.dto';
 import { GetEventParticipantQueryDto } from '@/events/dto/get-event-participant-query.dto';
+import { PrismaService } from '@/prisma/prisma.service';
 import { GetUserParticipantQueryDto } from '@/users/dto/get-user-participant-query.dto';
-import { PaginationService } from '@/common/services/pagination.service';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ParticipantStatus, Prisma } from '@prisma/client';
+import { EventParticipantDetailResponseDto } from './dto/event-participant-detail-response.dto';
+import { PaginationService } from '@/pagination/services/pagination.service';
+import { PaginationResult } from '@/pagination/interfaces/pagination-result.interface';
 
 @Injectable()
 export class EventParticipantsService {
 
     constructor(
-        private prisma: PrismaService,
-        private paginationService: PaginationService
+        private readonly prisma: PrismaService,
+        private readonly paginationService: PaginationService
     ){}
 
 

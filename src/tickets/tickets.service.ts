@@ -11,8 +11,8 @@ import { GetUserTicketsQueryDto } from './dto/get-user-tickets-query.dto';
 import { GetEventTicketsQueryDto } from '../events/dto/get-event-tickets-query.dto';
 import { ConfigService } from '@nestjs/config';
 import { DateUtils } from '@/common/date.utils';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
-import { PaginationService } from '@/common/services/pagination.service';
+import { PaginationService } from '@/pagination/services/pagination.service';
+import { PaginationResult } from '@/pagination/interfaces/pagination-result.interface';
 
 
 

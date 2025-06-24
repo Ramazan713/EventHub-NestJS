@@ -18,13 +18,23 @@ type Ticket {
 }
 
 type Query {
-    tickets(input: UserTicketQueryInput): [Ticket!]!
+    tickets(input: UserTicketQueryInput): TicketConnection!
     ticketById(id: ID!): Ticket!
 }
 
 type Mutation {
   purchaseTicket(eventId: Int!): CreateTicketPayload!
   cancelTicket(id: ID!): Boolean!
+}
+
+type TicketEdge {
+  cursor: String!
+  node: Ticket!
+}
+
+type TicketConnection {
+  edges: [TicketEdge!]!
+  pageInfo: PageInfo!
 }
 
 type CreateTicketPayload {

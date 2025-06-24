@@ -5,13 +5,15 @@ import { Controller, Get, Param, Query } from '@nestjs/common';
 import { OrganizerEventsQueryDto } from './dto/organizer-events-query.dto';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { RestPaginationFormatter } from '@/pagination/formetters/rest-pagination.formatter';
 
 @Roles(Role.ORGANIZER, Role.ADMIN)
 @Controller('organizers')
 export class OrganizersController {
 
     constructor(
-        private readonly eventsService: EventsService
+        private readonly eventsService: EventsService,
+        private readonly restFormatter: RestPaginationFormatter
     ){}
 
     
@@ -20,7 +22,8 @@ export class OrganizersController {
         @ActiveUser() user: ActiveUserData,
         @Query() query: OrganizerEventsQueryDto
     ){
-        return this.eventsService.getEventsByOwner(user.sub, query)
+        const response = await this.eventsService.getEventsByOwner(user.sub, query)
+        return this.restFormatter.format(response);
     }
 
     @Get("events/:id")

@@ -6,14 +6,14 @@ type Organizer implements IUser {
 
     role: Role!
 
-    createdEvents: [Event!]!
-    registeredEvents: [EventInfo!]!
-    draftEvents: [DraftEvent!]!
+    createdEvents(input: OrganizerEventsQueryInput): EventConnection!
+    registeredEvents(input: UserEventsQueryInput): EventInfoConnection!
+    draftEvents(input: DraftEventQueryInput): DraftConnection!
 }
 
 type Query {
     organizer: Organizer!
-    createdEvents(input: OrganizerEventsQueryInput): [Event!]!
+    createdEvents(input: OrganizerEventsQueryInput): EventConnection!
     organizerEventById(id: Int!): Event!
 }
 

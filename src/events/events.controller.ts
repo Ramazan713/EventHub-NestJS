@@ -4,8 +4,9 @@ import { Roles } from '@/auth/decorators/roles.decorator';
 import { AuthType } from '@/auth/enums/auth-type.enum';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { EventInfoDto } from '@/common/dto/event-info.dto';
-import { PaginationResult } from '@/common/interfaces/pagination-result.interface';
 import { EventParticipantsService } from '@/event-participants/event-participants.service';
+import { RestPaginationFormatter } from '@/pagination/formetters/rest-pagination.formatter';
+import { RestPaginationResult } from '@/pagination/interfaces/rest-pagination-result.interface';
 import { TicketsService } from '@/tickets/tickets.service';
 import { Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Query, RawBodyRequest, Req } from '@nestjs/common';
 import { Role } from '@prisma/client';
@@ -13,9 +14,9 @@ import { Request } from 'express';
 import { EventDto } from './dto/event.dto';
 import { GetEventParticipantQueryDto } from './dto/get-event-participant-query.dto';
 import { GetEventTicketsQueryDto } from './dto/get-event-tickets-query.dto';
+import { PublicEventQueryDto } from './dto/public-event-query.dto';
 import { PublicEventsQueryDto } from './dto/public-events-query.dto';
 import { EventsService } from './events.service';
-import { PublicEventQueryDto } from './dto/public-event-query.dto';
 
 
 
@@ -23,9 +24,10 @@ import { PublicEventQueryDto } from './dto/public-event-query.dto';
 export class EventsController {
 
     constructor(
-        private eventsService: EventsService,
-        private eventParticipantsService: EventParticipantsService,
-        private ticketsService: TicketsService
+        private readonly eventsService: EventsService,
+        private readonly eventParticipantsService: EventParticipantsService,
+        private readonly ticketsService: TicketsService,
+        private readonly restFormatter: RestPaginationFormatter
     ){}
 
 
@@ -33,8 +35,9 @@ export class EventsController {
     @Get()
     async getEvents(
         @Query() query: PublicEventsQueryDto
-    ): Promise<PaginationResult<EventInfoDto>> {
-        return this.eventsService.getPublicEvents(query);
+    ): Promise<RestPaginationResult<EventInfoDto>> {
+        const response = await this.eventsService.getPublicEvents(query);
+        return this.restFormatter.format(response);
     }
 
     @Auth(AuthType.None)
@@ -81,7 +84,8 @@ export class EventsController {
         @Param("id") eventId: number,
         @Query() query: GetEventParticipantQueryDto
     ){
-        return this.eventParticipantsService.getRegisteredParticipants(eventId, user.sub, query);
+        const response = await this.eventParticipantsService.getRegisteredParticipants(eventId, user.sub, query);
+        return this.restFormatter.format(response);
     }
 
     @HttpCode(201)
@@ -100,7 +104,8 @@ export class EventsController {
         @Param("id") eventId: number,
         @Query() query: GetEventTicketsQueryDto
     ){
-        return this.ticketsService.getEventTickets(eventId, user.sub, query);
+        const response = await this.ticketsService.getEventTickets(eventId, user.sub, query);
+        return this.restFormatter.format(response);
     }
 
     @Auth(AuthType.None)

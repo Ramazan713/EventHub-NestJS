@@ -1,16 +1,15 @@
-import { Auth } from '@/auth/decorators/auth.decorator';
-import { AuthType } from '@/auth/enums/auth-type.enum';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { EventsService } from '@/events/events.service';
+import { GraphQLPaginationFormatter } from '@/pagination/formetters/graphql-pagination.formatter';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserDto } from '@/users/dto/user.dto';
 import { ParseIntPipe } from '@nestjs/common';
 import { Args, Query, Resolver } from '@nestjs/graphql';
-import { OrganizerEventsQueryDto } from '../dto/organizer-events-query.dto';
-import { Roles } from '@/auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { ActiveUser } from '@/auth/decorators/current-user.decorator';
-import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { OrganizerEventsQueryDto } from '../dto/organizer-events-query.dto';
 
 @Roles(Role.ORGANIZER, Role.ADMIN)
 @Resolver()
@@ -19,7 +18,8 @@ export class OrganizersQueryResolver {
 
     constructor(
         private readonly eventsService: EventsService,
-        private readonly prismaService: PrismaService
+        private readonly prismaService: PrismaService,
+        private readonly graphqlFormetter: GraphQLPaginationFormatter
     ){}
 
     @Query("createdEvents")
@@ -27,8 +27,8 @@ export class OrganizersQueryResolver {
         @Args("input") input: OrganizerEventsQueryDto,
         @ActiveUser() user: ActiveUserData
     ) {
-        const items = await this.eventsService.getEventsByOwner(user.sub,input);
-        return items.data
+        const response = await this.eventsService.getEventsByOwner(user.sub,input);
+        return this.graphqlFormetter.format(response);
     }
 
     @Query("organizerEventById")
