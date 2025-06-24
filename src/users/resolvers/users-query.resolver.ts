@@ -7,8 +7,12 @@ import { ParseIntPipe } from '@nestjs/common';
 import { Args, Query, Resolver } from '@nestjs/graphql';
 import { UserEventsQueryDto } from '../dto/user-events-query.dto';
 import { UserDto } from '../dto/user.dto';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
-@Auth(AuthType.None)
+
 @Resolver()
 export class UsersQueryResolver {
 
@@ -20,24 +24,28 @@ export class UsersQueryResolver {
 
     @Query("registeredEvents")
     async registeredEvents(
-        @Args("input") input: UserEventsQueryDto
+        @Args("input") input: UserEventsQueryDto,
+        @ActiveUser() user: ActiveUserData,
     ) {
-        const items = await this.eventsService.getEventsByOwner(1,input); 
+        const items = await this.eventsService.getEventsByOwner(user.sub,input); 
         return items.data
     }
 
     @Query("userEventById")
     async getUserEventById(
         @Args("id", ParseIntPipe) id: number,
+        @ActiveUser() user: ActiveUserData,
     ) {
-        return this.eventsService.getUserEventById(1,id,{}); 
+        return this.eventsService.getUserEventById(user.sub,id,{}); 
     }
 
     @Query("user")
-    async user() {
+    async user(
+        @ActiveUser() userData: ActiveUserData
+    ) {
         const user = await this.prismaService.user.findFirst({
             where: {
-                id: 1
+                id: userData.sub
             }
         })
         return mapToDto(UserDto, user)

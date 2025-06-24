@@ -4,8 +4,9 @@ import { Args, Query, Resolver } from '@nestjs/graphql';
 import { TicketsService } from '../tickets.service';
 import { ParseIntPipe } from '@nestjs/common';
 import { GetUserTicketsQueryDto } from '../dto/get-user-tickets-query.dto';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
 
-@Auth(AuthType.None)
 @Resolver()
 export class TicketsQueryResolver {
 
@@ -15,16 +16,18 @@ export class TicketsQueryResolver {
 
     @Query("tickets")
     async getTickets(
-        @Args("input") input: GetUserTicketsQueryDto
+        @Args("input") input: GetUserTicketsQueryDto,
+        @ActiveUser() user: ActiveUserData,
     ): Promise<any[]> {
-        const items = await this.ticketsService.getUserTickets(1, input);
+        const items = await this.ticketsService.getUserTickets(user.sub, input);
         return items.data
     }
 
     @Query("ticketById")
     async getTicketById(
-        @Args("id", ParseIntPipe) id: number
+        @Args("id", ParseIntPipe) id: number,
+        @ActiveUser() user: ActiveUserData,
     ): Promise<any> {
-        return this.ticketsService.getUserTicketById(id, 1, false);
+        return this.ticketsService.getUserTicketById(id, user.sub, false);
     }
 }

@@ -6,10 +6,12 @@ import { Args, Query, Resolver } from '@nestjs/graphql';
 import { GetEventTicketsQueryDto } from '../dto/get-event-tickets-query.dto';
 import { PublicEventsQueryDto } from '../dto/public-events-query.dto';
 import { EventsService } from '../events.service';
+import { Role } from '@prisma/client';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 
 
-
-@Auth(AuthType.None)
 @Resolver()
 export class EventsQueryResolver {
 
@@ -18,6 +20,7 @@ export class EventsQueryResolver {
         private readonly ticketsService: TicketsService
     ) {}
 
+    @Auth(AuthType.None)
     @Query("publicEvents")
     async getPublicEvents(
         @Args("input") input: PublicEventsQueryDto,
@@ -26,6 +29,7 @@ export class EventsQueryResolver {
         return results.data;
     }
 
+    @Auth(AuthType.None)
     @Query("publicEventById")
     async getPublicEventById(
         @Args("id") id: number,
@@ -33,12 +37,14 @@ export class EventsQueryResolver {
         return this.eventsService.getPublicEventById(id, {});
     }
 
+    @Roles(Role.ORGANIZER, Role.ADMIN)
     @Query("eventTickets")
     async getEventTickets(
         @Args("eventId", ParseIntPipe) eventId: number,
-        @Args("input") input: GetEventTicketsQueryDto
+        @Args("input") input: GetEventTicketsQueryDto,
+        @ActiveUser() user: ActiveUserData
     ) {
-        return this.ticketsService.getEventTickets(eventId, 1,input);
+        return this.ticketsService.getEventTickets(eventId, user.sub,input);
     }
 
 }

@@ -1,5 +1,3 @@
-import { Auth } from '@/auth/decorators/auth.decorator';
-import { AuthType } from '@/auth/enums/auth-type.enum';
 import { EventInfoDto } from '@/common/dto/event-info.dto';
 import { UserInfoDto } from '@/common/dto/user-info.dto';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
@@ -7,7 +5,7 @@ import { EventParticipant } from '@/graphql-types';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
 
-@Auth(AuthType.None)
+
 @Resolver("EventParticipant")
 export class EventParticipantResolver {
 

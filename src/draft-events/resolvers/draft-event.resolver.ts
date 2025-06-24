@@ -1,12 +1,10 @@
-import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
-import { Auth } from '@/auth/decorators/auth.decorator';
-import { AuthType } from '@/auth/enums/auth-type.enum';
-import { PrismaService } from '@/prisma/prisma.service';
-import { DraftEvent } from '@/graphql-types';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { EventDto } from '@/events/dto/event.dto';
+import { DraftEvent } from '@/graphql-types';
+import { PrismaService } from '@/prisma/prisma.service';
+import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
 
-@Auth(AuthType.None)
+
 @Resolver("DraftEvent")
 export class DraftEventResolver {
 

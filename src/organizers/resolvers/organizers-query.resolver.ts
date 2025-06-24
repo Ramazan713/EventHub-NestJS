@@ -7,8 +7,12 @@ import { UserDto } from '@/users/dto/user.dto';
 import { ParseIntPipe } from '@nestjs/common';
 import { Args, Query, Resolver } from '@nestjs/graphql';
 import { OrganizerEventsQueryDto } from '../dto/organizer-events-query.dto';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
+import { ActiveUser } from '@/auth/decorators/current-user.decorator';
+import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
 
-@Auth(AuthType.None)
+@Roles(Role.ORGANIZER, Role.ADMIN)
 @Resolver()
 export class OrganizersQueryResolver {
 
@@ -20,24 +24,28 @@ export class OrganizersQueryResolver {
 
     @Query("createdEvents")
     async createdEvents(
-        @Args("input") input: OrganizerEventsQueryDto
+        @Args("input") input: OrganizerEventsQueryDto,
+        @ActiveUser() user: ActiveUserData
     ) {
-        const items = await this.eventsService.getEventsByOwner(1,input);
+        const items = await this.eventsService.getEventsByOwner(user.sub,input);
         return items.data
     }
 
     @Query("organizerEventById")
     async getOrganizerEventById(
-        @Args("id", ParseIntPipe) id: number
+        @Args("id", ParseIntPipe) id: number,
+        @ActiveUser() user: ActiveUserData
     ) {
-        return this.eventsService.getEventByOwnerId(1, id)
+        return this.eventsService.getEventByOwnerId(user.sub, id)
     }
 
     @Query("organizer")
-    async getOrganizer() {
+    async getOrganizer(
+        @ActiveUser() userData: ActiveUserData
+    ) {
         const user = await this.prismaService.user.findFirst({
             where: {
-                id: 1
+                id: userData.sub
             }
         })
         return mapToDto(UserDto, user)

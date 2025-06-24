@@ -1,9 +1,9 @@
-import { Auth } from '@/auth/decorators/auth.decorator';
-import { AuthType } from '@/auth/enums/auth-type.enum';
+import { Roles } from '@/auth/decorators/roles.decorator';
 import { Resolver } from '@nestjs/graphql';
+import { Role } from '@prisma/client';
 import { DraftEventsService } from '../draft-events.service';
 
-@Auth(AuthType.None)
+@Roles(Role.ORGANIZER, Role.ADMIN)
 @Resolver()
 export class DraftEventsMutationResolver {
 
