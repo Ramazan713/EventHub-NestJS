@@ -39,7 +39,7 @@ export class EventsController {
 
     @Auth(AuthType.None)
     @Get(":id")
-    async getEventByOwnerId(
+    async getEventId(
         @Param("id", ParseIntPipe) eventId: number,
         @Query() query: PublicEventQueryDto
     ) {

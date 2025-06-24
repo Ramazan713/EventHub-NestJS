@@ -18,7 +18,19 @@ type Ticket {
 }
 
 type Query {
-    tickets: [Ticket!]!
+    tickets(input: UserTicketQueryInput): [Ticket!]!
+    ticketById(id: ID!): Ticket!
+}
+
+input UserTicketQueryInput {
+  first: Int
+  last: Int
+  after: String
+  before: String
+
+  status: TicketStatus
+  dateFrom: Date
+  dateTo: Date
 }
 
 enum TicketStatus {

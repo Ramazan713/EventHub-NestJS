@@ -1,10 +1,10 @@
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
-import { TicketStatus } from "@prisma/client";
+import { EventTicketsQueryInput, TicketStatus } from "@/graphql-types";
 import { Type } from "class-transformer";
 import { IsEnum, IsNumber, IsOptional } from "class-validator";
 
 
-export class GetEventTicketsQueryDto extends PaginationQueryDto {
+export class GetEventTicketsQueryDto extends PaginationQueryDto implements EventTicketsQueryInput{
 
     @IsOptional()
     @IsEnum(TicketStatus)

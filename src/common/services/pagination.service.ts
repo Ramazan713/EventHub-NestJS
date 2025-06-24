@@ -151,7 +151,7 @@ export class PaginationService {
         return [{ [sortBy]: sortOrder }];
     }
 
-    private getPrimarySortOrder(sortConfig: Array<Record<string, any>>): SortOrder {
+    private getPrimarySortOrder(sortConfig: Array<Record<string, any>>): string {
         const firstSort = sortConfig[0];
         const firstKey = Object.keys(firstSort)[0];
         const value = firstSort[firstKey];
@@ -160,11 +160,11 @@ export class PaginationService {
         // içindeki ilk order'ı al
         if (typeof value === 'object' && value !== null) {
             const nestedKey = Object.keys(value)[0];
-            return value[nestedKey];
+            return value[nestedKey]?.toLowerCase();
         }
         
         // Basit durum (örn: { name: 'asc' })
-        return value;
+        return value?.toLowerCase();
     }
 
     private encodeCursor(item: any, sortConfig: Array<Record<string, any>>): string {

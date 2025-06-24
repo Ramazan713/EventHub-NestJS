@@ -1,13 +1,14 @@
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto"
 import { SortOrder } from "@/common/enums/sort-order.enum"
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe"
-import { EventCategory } from "@prisma/client"
 import { Type } from "class-transformer"
 import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from "class-validator"
+import { EventSortBy } from "../enums/event-sort-by.enum"
+import { BaseEventsQueryInput, EventCategory } from "@/graphql-types"
 
 
 
-export abstract class BaseEventsQueryDto extends PaginationQueryDto {
+export abstract class BaseEventsQueryDto extends PaginationQueryDto implements BaseEventsQueryInput{
     @IsNotEmpty()
     @IsOptional()
     q?: string
@@ -46,8 +47,9 @@ export abstract class BaseEventsQueryDto extends PaginationQueryDto {
     @IsOptional()
     priceTo?: number
 
+    @IsEnum(EventSortBy)
     @IsOptional()
-    sortBy?: "date" | "price" | "id"
+    sortBy?: EventSortBy
 
     @IsEnum(SortOrder)
     @IsOptional()

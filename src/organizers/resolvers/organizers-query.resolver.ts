@@ -4,7 +4,9 @@ import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
 import { EventsService } from '@/events/events.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserDto } from '@/users/dto/user.dto';
-import { Query, Resolver } from '@nestjs/graphql';
+import { ParseIntPipe } from '@nestjs/common';
+import { Args, Query, Resolver } from '@nestjs/graphql';
+import { OrganizerEventsQueryDto } from '../dto/organizer-events-query.dto';
 
 @Auth(AuthType.None)
 @Resolver()
@@ -17,9 +19,18 @@ export class OrganizersQueryResolver {
     ){}
 
     @Query("createdEvents")
-    async createdEvents() {
-        const items = await this.eventsService.getEventsByOwner(1,{});
+    async createdEvents(
+        @Args("input") input: OrganizerEventsQueryDto
+    ) {
+        const items = await this.eventsService.getEventsByOwner(1,input);
         return items.data
+    }
+
+    @Query("organizerEventById")
+    async getOrganizerEventById(
+        @Args("id", ParseIntPipe) id: number
+    ) {
+        return this.eventsService.getEventByOwnerId(1, id)
     }
 
     @Query("organizer")

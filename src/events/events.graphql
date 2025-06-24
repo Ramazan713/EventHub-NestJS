@@ -50,8 +50,41 @@ type Event implements IEvent {
     tickets: [Ticket!]!
 }
 
+
 type Query {
-    publicEvents: [EventInfo!]!
+    publicEvents(input: PublicEventsQueryInput): [EventInfo!]!
+    publicEventById(id: Int!): EventInfo!
+    eventTickets(eventId: ID!, input: EventTicketsQueryInput): [Ticket!]!
+}
+
+input PublicEventsQueryInput {
+    q: String
+    category: EventCategory
+    isOnline: Boolean
+    location: String
+    dateFrom: Date
+    dateTo: Date
+    priceFrom: Float
+    priceTo: Float
+    sortBy: EventSortBy
+    sortOrder: SortOrder
+
+    first: Int
+    last: Int
+    after: String
+    before: String
+
+    organizerId: Int
+}
+
+input EventTicketsQueryInput {
+    first: Int
+    last: Int
+    after: String
+    before: String
+
+    status: TicketStatus
+    userId: Int
 }
 
 enum EventCategory {

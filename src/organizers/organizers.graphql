@@ -13,5 +13,26 @@ type Organizer implements IUser {
 
 type Query {
     organizer: Organizer!
-    createdEvents: [Event!]!
+    createdEvents(input: OrganizerEventsQueryInput): [Event!]!
+    organizerEventById(id: Int!): Event!
+}
+
+input OrganizerEventsQueryInput {
+    q: String
+    category: EventCategory
+    isOnline: Boolean
+    location: String
+    dateFrom: Date
+    dateTo: Date
+    priceFrom: Float
+    priceTo: Float
+    sortBy: EventSortBy
+    sortOrder: SortOrder
+
+    first: Int
+    last: Int
+    after: String
+    before: String
+
+    isCancelled: Boolean
 }

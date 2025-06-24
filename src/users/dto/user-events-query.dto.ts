@@ -1,11 +1,11 @@
 import { BaseEventsQueryDto } from "@/common/dto/base-events-query.dto";
 import { IsBooleanString } from "@/common/pipes/boolean-transform.pipe";
-import { ParticipantStatus } from "@prisma/client";
+import { ParticipantStatus, UserEventsQueryInput } from "@/graphql-types";
 import { Type } from "class-transformer";
 import { IsEnum, IsNumber, IsOptional, Min } from "class-validator";
 
 
-export class UserEventsQueryDto extends BaseEventsQueryDto {
+export class UserEventsQueryDto extends BaseEventsQueryDto implements UserEventsQueryInput{
 
     @Type(() => Number)
     @IsNumber()

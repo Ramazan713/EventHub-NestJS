@@ -27,13 +27,13 @@ export class TicketsService {
     ){}
 
 
-    async getUserTicketById(ticketId: number, userId: number): Promise<TicketWithDetailResponseDto> {
+    async getUserTicketById(ticketId: number, userId: number, includeDetail: boolean = true): Promise<TicketWithDetailResponseDto> {
         const ticket = await this.prisma.ticket.findFirst({
             where: {id: ticketId, userId},
-            include: {
+            include: includeDetail ? {
                 event: true,
                 user: true
-            }
+            } : undefined
         })
         if(!ticket){
             throw new NotFoundException("ticket not found")

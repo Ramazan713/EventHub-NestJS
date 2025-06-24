@@ -14,6 +14,7 @@ import { ParticipantStatus, Prisma, TicketStatus, User } from '@prisma/client';
 import { EventDto } from './dto/event.dto';
 import { PublicEventsQueryDto } from './dto/public-events-query.dto';
 import { PublicEventQueryDto } from './dto/public-event-query.dto';
+import { EventSortBy } from '@/common/enums/event-sort-by.enum';
 
 @Injectable()
 export class EventsService {
@@ -230,8 +231,9 @@ export class EventsService {
 
         if(query.location) whereQuery.location = {contains: query.location, mode: "insensitive"}
 
-        let sortBy: string =  query.sortBy || "date"
-        let sortOrder: SortOrder = query.sortOrder || "desc"
+        let sortBy: string = query.sortBy?.toString()?.toLowerCase() ?? EventSortBy.DATE?.toString()?.toLowerCase()
+        let sortOrder: string = query.sortOrder?.toString()?.toLowerCase() || SortOrder.ASC?.toString()?.toLowerCase()
+
         orderBy[sortBy] = sortOrder
         return {
             where: whereQuery,

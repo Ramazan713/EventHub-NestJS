@@ -8,6 +8,17 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export enum EventSortBy {
+    DATE = "DATE",
+    PRICE = "PRICE",
+    ID = "ID"
+}
+
+export enum SortOrder {
+    ASC = "ASC",
+    DESC = "DESC"
+}
+
 export enum EventCategory {
     WORKSHOP = "WORKSHOP",
     SEMINAR = "SEMINAR",
@@ -35,6 +46,108 @@ export enum Role {
     USER = "USER",
     ORGANIZER = "ORGANIZER",
     ADMIN = "ADMIN"
+}
+
+export class BaseEventsQueryInput {
+    q?: Nullable<string>;
+    category?: Nullable<EventCategory>;
+    isOnline?: Nullable<boolean>;
+    location?: Nullable<string>;
+    dateFrom?: Nullable<Date>;
+    dateTo?: Nullable<Date>;
+    priceFrom?: Nullable<number>;
+    priceTo?: Nullable<number>;
+    sortBy?: Nullable<EventSortBy>;
+    sortOrder?: Nullable<SortOrder>;
+}
+
+export class PaginationInput {
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+}
+
+export class DraftEventQueryInput {
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+}
+
+export class PublicEventsQueryInput {
+    q?: Nullable<string>;
+    category?: Nullable<EventCategory>;
+    isOnline?: Nullable<boolean>;
+    location?: Nullable<string>;
+    dateFrom?: Nullable<Date>;
+    dateTo?: Nullable<Date>;
+    priceFrom?: Nullable<number>;
+    priceTo?: Nullable<number>;
+    sortBy?: Nullable<EventSortBy>;
+    sortOrder?: Nullable<SortOrder>;
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+    organizerId?: Nullable<number>;
+}
+
+export class EventTicketsQueryInput {
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+    status?: Nullable<TicketStatus>;
+    userId?: Nullable<number>;
+}
+
+export class OrganizerEventsQueryInput {
+    q?: Nullable<string>;
+    category?: Nullable<EventCategory>;
+    isOnline?: Nullable<boolean>;
+    location?: Nullable<string>;
+    dateFrom?: Nullable<Date>;
+    dateTo?: Nullable<Date>;
+    priceFrom?: Nullable<number>;
+    priceTo?: Nullable<number>;
+    sortBy?: Nullable<EventSortBy>;
+    sortOrder?: Nullable<SortOrder>;
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+    isCancelled?: Nullable<boolean>;
+}
+
+export class UserTicketQueryInput {
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+    status?: Nullable<TicketStatus>;
+    dateFrom?: Nullable<Date>;
+    dateTo?: Nullable<Date>;
+}
+
+export class UserEventsQueryInput {
+    q?: Nullable<string>;
+    category?: Nullable<EventCategory>;
+    isOnline?: Nullable<boolean>;
+    location?: Nullable<string>;
+    dateFrom?: Nullable<Date>;
+    dateTo?: Nullable<Date>;
+    priceFrom?: Nullable<number>;
+    priceTo?: Nullable<number>;
+    sortBy?: Nullable<EventSortBy>;
+    sortOrder?: Nullable<SortOrder>;
+    first?: Nullable<number>;
+    last?: Nullable<number>;
+    after?: Nullable<string>;
+    before?: Nullable<string>;
+    organizerId?: Nullable<number>;
+    isCancelled?: Nullable<boolean>;
+    status?: Nullable<ParticipantStatus>;
 }
 
 export interface IEvent {
@@ -73,14 +186,20 @@ export class DraftEvent {
 }
 
 export abstract class IQuery {
-    draftEvents: DraftEvent[];
+    draftEvents?: DraftEvent[];
+    draftEventById?: DraftEvent;
     participants?: EventParticipant[];
-    publicEvents: EventInfo[];
+    publicEvents?: EventInfo[];
+    publicEventById?: EventInfo;
+    eventTickets?: Ticket[];
     organizer: Organizer;
-    createdEvents: Event[];
-    tickets: Ticket[];
+    createdEvents?: Event[];
+    organizerEventById?: Event;
+    tickets?: Ticket[];
+    ticketById?: Ticket;
     user: User;
-    registeredEvents: EventInfo[];
+    registeredEvents?: EventInfo[];
+    userEventById?: EventInfo;
 }
 
 export class EventParticipant {

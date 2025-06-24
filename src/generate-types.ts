@@ -9,6 +9,6 @@ definitionFactory.generate({
     outputAs: "class",
     skipResolverArgs: true,
     defaultTypeMapping: {
-        ID: "number",
-    }
+        ID: "number"
+    },
 });

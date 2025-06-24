@@ -1,8 +1,9 @@
+import { PaginationInput } from "@/graphql-types";
 import { Type } from "class-transformer";
 import { IsInt, IsNumber, IsOptional, IsString, Min,  } from "class-validator";
 
 
-export class PaginationQueryDto {
+export class PaginationQueryDto implements PaginationInput{
 
     @IsOptional()
     @Type(() => Number)

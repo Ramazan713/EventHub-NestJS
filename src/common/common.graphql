@@ -1,0 +1,34 @@
+
+scalar Date
+
+
+enum EventSortBy {
+  DATE
+  PRICE
+  ID
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
+input BaseEventsQueryInput {
+  q: String
+  category: EventCategory
+  isOnline: Boolean
+  location: String
+  dateFrom: Date
+  dateTo: Date
+  priceFrom: Float
+  priceTo: Float
+  sortBy: EventSortBy
+  sortOrder: SortOrder
+}
+
+input PaginationInput {
+  first: Int
+  last: Int
+  after: String
+  before: String
+}

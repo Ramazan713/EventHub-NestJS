@@ -1,20 +1,44 @@
-import { Query, Resolver } from '@nestjs/graphql';
-import { EventsService } from '../events.service';
 import { Auth } from '@/auth/decorators/auth.decorator';
 import { AuthType } from '@/auth/enums/auth-type.enum';
+import { TicketsService } from '@/tickets/tickets.service';
+import { ParseIntPipe } from '@nestjs/common';
+import { Args, Query, Resolver } from '@nestjs/graphql';
+import { GetEventTicketsQueryDto } from '../dto/get-event-tickets-query.dto';
+import { PublicEventsQueryDto } from '../dto/public-events-query.dto';
+import { EventsService } from '../events.service';
+
+
 
 @Auth(AuthType.None)
 @Resolver()
 export class EventsQueryResolver {
 
     constructor(
-        private readonly eventsService: EventsService
+        private readonly eventsService: EventsService,
+        private readonly ticketsService: TicketsService
     ) {}
 
     @Query("publicEvents")
-    async getPublicEvents() {
-        const results = await this.eventsService.getPublicEvents({});
+    async getPublicEvents(
+        @Args("input") input: PublicEventsQueryDto,
+    ) {
+        const results = await this.eventsService.getPublicEvents(input);
         return results.data;
+    }
+
+    @Query("publicEventById")
+    async getPublicEventById(
+        @Args("id") id: number,
+    ) {
+        return this.eventsService.getPublicEventById(id, {});
+    }
+
+    @Query("eventTickets")
+    async getEventTickets(
+        @Args("eventId", ParseIntPipe) eventId: number,
+        @Args("input") input: GetEventTicketsQueryDto
+    ) {
+        return this.ticketsService.getEventTickets(eventId, 1,input);
     }
 
 }

@@ -21,7 +21,16 @@ type DraftEvent {
 }
 
 type Query {
-    draftEvents: [DraftEvent!]!
+    draftEvents(input: DraftEventQueryInput): [DraftEvent!]!
+    draftEventById(id: ID!): DraftEvent!
+}
+
+
+input DraftEventQueryInput {
+  first: Int
+  last: Int
+  after: String
+  before: String
 }
 
 

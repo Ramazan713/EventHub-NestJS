@@ -30,9 +30,32 @@ type User implements IUser {
 
 type Query {
     user: User!
-    registeredEvents: [EventInfo!]!
+    registeredEvents(input: UserEventsQueryInput): [EventInfo!]!
+    userEventById(id: ID!): EventInfo!
 }
 
+
+input UserEventsQueryInput {
+    q: String
+    category: EventCategory
+    isOnline: Boolean
+    location: String
+    dateFrom: Date
+    dateTo: Date
+    priceFrom: Float
+    priceTo: Float
+    sortBy: EventSortBy
+    sortOrder: SortOrder
+
+    first: Int
+    last: Int
+    after: String
+    before: String
+
+    organizerId: Int
+    isCancelled: Boolean
+    status: ParticipantStatus
+}
 
 enum Role {
   USER
