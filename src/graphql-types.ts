@@ -48,6 +48,16 @@ export enum Role {
     ADMIN = "ADMIN"
 }
 
+export class LoginInput {
+    email: string;
+    password: string;
+}
+
+export class SignUpInput {
+    email: string;
+    password: string;
+}
+
 export class BaseEventsQueryInput {
     q?: Nullable<string>;
     category?: Nullable<EventCategory>;
@@ -190,6 +200,26 @@ export interface IUser {
     name?: Nullable<string>;
 }
 
+export abstract class IMutation {
+    login?: AuthPayload;
+    signUp?: AuthPayload;
+    createDraft?: DraftEvent;
+    updateDraft?: DraftEvent;
+    deleteDraft?: DraftEvent;
+    publishDraft?: DraftEvent;
+    createDraftFromEvent?: DraftEvent;
+    cancelEvent?: Event;
+    registerEvent?: boolean;
+    unregisterEvent?: boolean;
+    purchaseTicket?: CreateTicketPayload;
+    cancelTicket?: boolean;
+}
+
+export class AuthPayload {
+    token: string;
+    user: UserDetailInfo;
+}
+
 export class DraftEvent {
     id: number;
     title: string;
@@ -222,19 +252,6 @@ export abstract class IQuery {
     user: User;
     registeredEvents?: EventInfo[];
     userEventById?: EventInfo;
-}
-
-export abstract class IMutation {
-    createDraft?: DraftEvent;
-    updateDraft?: DraftEvent;
-    deleteDraft?: DraftEvent;
-    publishDraft?: DraftEvent;
-    createDraftFromEvent?: DraftEvent;
-    cancelEvent?: Event;
-    registerEvent?: boolean;
-    unregisterEvent?: boolean;
-    purchaseTicket?: CreateTicketPayload;
-    cancelTicket?: boolean;
 }
 
 export class EventParticipant {

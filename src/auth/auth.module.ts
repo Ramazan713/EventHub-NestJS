@@ -13,6 +13,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { HashingService } from './hashing/hashing.service';
 import { BcryptService } from './hashing/bcrypt.service';
+import { AuthResolver } from './resolvers/auth.resolver';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { BcryptService } from './hashing/bcrypt.service';
     {
       provide: HashingService,
       useClass: BcryptService
-    }
+    },
+    AuthResolver
   ]
 })
 export class AuthModule {}

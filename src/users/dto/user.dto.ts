@@ -1,9 +1,9 @@
 
-import { Role } from '@prisma/client';
+import { Role, UserDetailInfo } from '@/graphql-types';
 import { Expose } from 'class-transformer';
 
 
-export class UserDto {
+export class UserDto implements UserDetailInfo{
   @Expose()
   id: number;
 

@@ -8,6 +8,7 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import { SignUpRequestDto } from './dto/signup-request.dto';
 import { ActiveUserData } from './interfaces/active-user-data.interface';
 import { HashingService } from './hashing/hashing.service';
+import { LoginRequestDto } from './dto/login-request.dto';
 
 
 @Injectable()
@@ -42,6 +43,16 @@ export class AuthService {
         return {
             token,
             user: user
+        }
+    }
+
+    async login2(data: LoginRequestDto): Promise<AuthResponseDto>{
+        const validatedUser = await this.validateUser(data.email, data.password)
+
+        const token = await this.generateToken(validatedUser)
+        return {
+            token,
+            user: validatedUser
         }
     }
 

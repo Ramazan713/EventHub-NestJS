@@ -1,8 +1,8 @@
-import { SignUpInput } from "@/graphql-types"
+import { LoginInput } from "@/graphql-types"
 import { IsEmail, IsString, MinLength } from "class-validator"
 
 
-export class SignUpRequestDto implements SignUpInput{
+export class LoginRequestDto implements LoginInput{
     @IsEmail()
     email: string
 
