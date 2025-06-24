@@ -4,9 +4,10 @@ import { TicketsController } from './tickets.controller';
 import { TicketsService } from './tickets.service';
 import { TicketsQueryResolver } from './resolvers/tickets-query.resolver';
 import { TicketResolver } from './resolvers/ticket.resolver';
+import { TicketsMutationResolver } from './resolvers/tickets-mutation.resolver';
 
 @Module({
-  providers: [TicketsService, TicketsQueryResolver, TicketResolver],
+  providers: [TicketsService, TicketsQueryResolver, TicketResolver, TicketsMutationResolver],
   exports: [TicketsService],
   imports: [
     PaymentsModule,

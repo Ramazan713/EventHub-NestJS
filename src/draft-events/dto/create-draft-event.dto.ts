@@ -1,9 +1,9 @@
 import { Type } from "class-transformer"
 import { IsBoolean, IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MAX, MaxLength, Min, MinLength } from "class-validator"
-import { EventCategory } from "@prisma/client"
+import * as GraphQLTypes from "@/graphql-types"
 
 
-export class CreateDraftEventDto {
+export class CreateDraftEventDto implements GraphQLTypes.CreateDraftEventInput {
 
     @IsString()
     @MinLength(3)
@@ -15,8 +15,8 @@ export class CreateDraftEventDto {
     @MaxLength(250)
     description: string
 
-    @IsEnum(EventCategory)
-    category: EventCategory
+    @IsEnum(GraphQLTypes.EventCategory)
+    category: GraphQLTypes.EventCategory
 
     @IsDate()
     @Type(() => Date)

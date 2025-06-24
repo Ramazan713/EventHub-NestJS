@@ -75,6 +75,28 @@ export class DraftEventQueryInput {
     before?: Nullable<string>;
 }
 
+export class CreateDraftEventInput {
+    title: string;
+    description: string;
+    category: EventCategory;
+    date: Date;
+    price: number;
+    capacity?: Nullable<number>;
+    isOnline: boolean;
+    location?: Nullable<string>;
+}
+
+export class UpdateDraftEventInput {
+    title?: Nullable<string>;
+    description?: Nullable<string>;
+    category?: Nullable<EventCategory>;
+    date?: Nullable<Date>;
+    price?: Nullable<number>;
+    capacity?: Nullable<number>;
+    isOnline?: Nullable<boolean>;
+    location?: Nullable<string>;
+}
+
 export class PublicEventsQueryInput {
     q?: Nullable<string>;
     category?: Nullable<EventCategory>;
@@ -202,6 +224,19 @@ export abstract class IQuery {
     userEventById?: EventInfo;
 }
 
+export abstract class IMutation {
+    createDraft?: DraftEvent;
+    updateDraft?: DraftEvent;
+    deleteDraft?: DraftEvent;
+    publishDraft?: DraftEvent;
+    createDraftFromEvent?: DraftEvent;
+    cancelEvent?: Event;
+    registerEvent?: boolean;
+    unregisterEvent?: boolean;
+    purchaseTicket?: CreateTicketPayload;
+    cancelTicket?: boolean;
+}
+
 export class EventParticipant {
     id: number;
     userId: number;
@@ -270,6 +305,11 @@ export class Ticket {
     paidAt?: Nullable<string>;
     refundedAt?: Nullable<string>;
     event: EventInfo;
+}
+
+export class CreateTicketPayload {
+    checkoutUrl?: Nullable<string>;
+    paymentSessionId?: Nullable<string>;
 }
 
 export class UserInfo implements IUser {

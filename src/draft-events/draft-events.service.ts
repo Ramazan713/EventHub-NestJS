@@ -78,6 +78,7 @@ export class DraftEventsService {
         }
 
         const minFutureDate = DateUtils.addHours();
+        updateDraftDto
         if(updateDraftDto.date && updateDraftDto.date < minFutureDate){
             throw new BadRequestException("Date must be at least 1 hour in advance");
         }

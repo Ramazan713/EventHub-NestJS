@@ -22,6 +22,16 @@ type Query {
     ticketById(id: ID!): Ticket!
 }
 
+type Mutation {
+  purchaseTicket(eventId: Int!): CreateTicketPayload!
+  cancelTicket(id: ID!): Boolean!
+}
+
+type CreateTicketPayload {
+  checkoutUrl: String
+  paymentSessionId: String
+}
+
 input UserTicketQueryInput {
   first: Int
   last: Int

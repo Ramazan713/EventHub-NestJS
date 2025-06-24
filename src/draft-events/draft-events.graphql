@@ -1,36 +1,66 @@
 
 
 type DraftEvent {
-    id: ID!
-    title: String!
-    description: String!
-    category: EventCategory!
+  id: ID!
+  title: String!
+  description: String!
+  category: EventCategory!
 
-    isOnline: Boolean!
-    price: Float!
-    capacity: Int
-    location: String
-    date: String!
-    updatedAt: String!
-    createdAt: String!
+  isOnline: Boolean!
+  price: Float!
+  capacity: Int
+  location: String
+  date: String!
+  updatedAt: String!
+  createdAt: String!
 
-    originalEventId: Int
-    organizerId: Int!
+  originalEventId: Int
+  organizerId: Int!
 
-    event: Event
+  event: Event
 }
 
 type Query {
-    draftEvents(input: DraftEventQueryInput): [DraftEvent!]!
-    draftEventById(id: ID!): DraftEvent!
+  draftEvents(input: DraftEventQueryInput): [DraftEvent!]!
+  draftEventById(id: ID!): DraftEvent!
 }
 
+type Mutation {
+  createDraft(input: CreateDraftEventInput!): DraftEvent!
+  updateDraft(id: ID!, input: UpdateDraftEventInput!): DraftEvent!
+  deleteDraft(id: ID!): DraftEvent!
+  publishDraft(id: ID!): DraftEvent!
+  createDraftFromEvent(eventId: ID!): DraftEvent!
+}
 
 input DraftEventQueryInput {
   first: Int
   last: Int
   after: String
   before: String
+}
+
+
+input CreateDraftEventInput {
+  title: String!
+  description: String!
+  category: EventCategory!
+  date: Date!
+  price: Int!
+  capacity: Int
+  isOnline: Boolean!
+  location: String
+}
+
+input UpdateDraftEventInput {
+  title: String
+  description: String
+  category: EventCategory
+  date: Date
+  price: Int
+  capacity: Int
+  isOnline: Boolean
+  location: String
 }
 
 

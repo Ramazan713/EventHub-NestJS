@@ -57,6 +57,12 @@ type Query {
     eventTickets(eventId: ID!, input: EventTicketsQueryInput): [Ticket!]!
 }
 
+type Mutation {
+    cancelEvent(id: ID!): Event!
+    registerEvent(id: ID!): Boolean!
+    unregisterEvent(id: ID!): Boolean!
+}
+
 input PublicEventsQueryInput {
     q: String
     category: EventCategory
