@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventsModule } from './events/events.module';
 import { DraftEventsModule } from './draft-events/draft-events.module';
 import { EventParticipantsModule } from './event-participants/event-participants.module';
@@ -15,6 +15,9 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { PaginationService } from './pagination/services/pagination.service';
 import { PaginationModule } from './pagination/pagination.module';
+import { PubSubModule } from './pub-sub/pub-sub.module';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { GraphqlConfigService } from './common/config/graphql-config.service';
 
 @Module({
   imports: [
@@ -24,12 +27,13 @@ import { PaginationModule } from './pagination/pagination.module';
         JWT_SECRET: Joi.string().required()
       })
     }),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      typePaths: ['./**/*.graphql'],
-      graphiql: true
-    }),
     AuthModule, 
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      imports: [JwtModule],
+      inject: [JwtService, ConfigService],
+      useClass: GraphqlConfigService
+    }),
     UsersModule,
     PrismaModule,
     EventsModule,
@@ -40,6 +44,7 @@ import { PaginationModule } from './pagination/pagination.module';
     CommonModule,
     OrganizersModule,
     PaginationModule,
+    PubSubModule,
   ],
   providers: [PaginationService],
 })

@@ -3,6 +3,7 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
 import { Reflector } from "@nestjs/core";
 import { AuthType } from "../enums/auth-type.enum";
 import { AUTH_TYPE_KEY } from "../decorators/auth.decorator";
+import { GqlContextType, GqlExecutionContext } from "@nestjs/graphql";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -20,6 +21,14 @@ export class AuthGuard implements CanActivate {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+
+        const isGraphQLSubscription = context.getType<GqlContextType>() === 'graphql' && 
+                               GqlExecutionContext.create(context).getInfo().operation.operation === 'subscription';
+
+        if (isGraphQLSubscription) {
+            return this.canActivateSubscription(context); 
+        }
+
         const authTypes = this.reflector.getAllAndOverride<AuthType[]>(AUTH_TYPE_KEY, [
             context.getHandler(),
             context.getClass()
@@ -39,5 +48,28 @@ export class AuthGuard implements CanActivate {
             }
         }
         throw error
+    }
+
+    private async canActivateSubscription(context: ExecutionContext): Promise<boolean> {
+        const ctx = GqlExecutionContext.create(context);
+        const req = ctx.getContext().req
+        
+        const authTypes = this.reflector.getAllAndOverride<AuthType[]>(AUTH_TYPE_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]) || [AuthGuard.defaultAuthType];
+
+        if (authTypes.includes(AuthType.None)) {
+            return true;
+        }
+
+        if (authTypes.includes(AuthType.Bearer)) {
+            if (!req.user) {
+                throw new UnauthorizedException('Subscription requires authentication');
+            }
+            return true;
+        }
+
+        return false;
     }
 }

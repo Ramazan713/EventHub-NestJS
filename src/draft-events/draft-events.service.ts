@@ -12,13 +12,16 @@ import { PaginationQueryDto } from '@/pagination/dto/pagination-query.dto';
 import { DraftEvent } from '@prisma/client';
 import { PaginationService } from '@/pagination/services/pagination.service';
 import { PaginationResult } from '@/pagination/interfaces/pagination-result.interface';
+import { DraftEvents } from './enums/draft-events.enum';
+import { PubSubService } from '@/pub-sub/pub-sub.service';
 
 @Injectable()
 export class DraftEventsService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly paginationService: PaginationService
+        private readonly paginationService: PaginationService,
+        private readonly pubsubService: PubSubService
     ){}
 
     async createDraftEvent(tokenPayload: ActiveUserData,createDraftEventDto: CreateDraftEventDto) {
@@ -26,12 +29,15 @@ export class DraftEventsService {
         if(createDraftEventDto.date < minFutureDate){
             throw new BadRequestException("Date must be at least 1 hour in advance");
         }
-        return this.prisma.draftEvent.create({
+        const createdDraft = await this.prisma.draftEvent.create({
             data: {
                 ...createDraftEventDto,
                 organizerId: tokenPayload.sub,
             }
         });
+        const createdDraftDto = mapToDto(DraftEventDto, createdDraft);
+        this.pubsubService.publish(DraftEvents.CREATED, createdDraftDto)
+        return createdDraftDto
     }
 
     async getDrafts(organizerId: number, paginationQueryDto: PaginationQueryDto): Promise<PaginationResult<DraftEventDto>> {
@@ -87,8 +93,11 @@ export class DraftEventsService {
             where: { id, organizerId: tokenPayload.sub },
             data: updateDraftDto
         });
+        const updatedDraftDto = mapToDto(DraftEventDto, updatedDraft);
 
-        return DraftEventDto.fromDraftEvent(updatedDraft);
+        this.pubsubService.publish(DraftEvents.UPDATED, updatedDraftDto)
+
+        return updatedDraftDto
     }
 
     async deleteDraft(id: number, organizerId: number): Promise<void> {
@@ -102,9 +111,11 @@ export class DraftEventsService {
             throw new NotFoundException("Draft not found");
         }
 
-        await this.prisma.draftEvent.delete({
+        const deletedDraft = await this.prisma.draftEvent.delete({
             where: { id, organizerId }
         });
+        const deletedDraftDto = mapToDto(DraftEventDto, deletedDraft);
+        this.pubsubService.publish(DraftEvents.DELETED, deletedDraftDto)
     }
 
     async publishDraft(id: number, organizerId: number): Promise<EventDto> {
@@ -131,9 +142,11 @@ export class DraftEventsService {
                 create: draftData
             })
 
-            await txn.draftEvent.delete({
+            const draftEventDeleted = await txn.draftEvent.delete({
                 where: {id: draft.id}
             })
+            const draftEventDeletedDto = mapToDto(DraftEventDto, draftEventDeleted);
+            this.pubsubService.publish(DraftEvents.DELETED, draftEventDeletedDto)
             return event
         })
 
@@ -167,8 +180,10 @@ export class DraftEventsService {
                 originalEventId: event.id
             }
         })
+        const newDraftDto = mapToDto(DraftEventDto, newDraft);
+        this.pubsubService.publish(DraftEvents.CREATED, newDraftDto)
 
-        return DraftEventDto.fromDraftEvent(newDraft);
+        return newDraftDto
     }
 
 }

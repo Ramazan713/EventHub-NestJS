@@ -33,6 +33,12 @@ type Mutation {
   createDraftFromEvent(eventId: ID!): DraftEvent!
 }
 
+type Subscription {
+  draftEventCreated: DraftEvent!
+  draftEventUpdated: DraftEvent!
+  draftEventDeleted: DraftEvent!
+}
+
 type DraftEdge {
   node: DraftEvent!
   cursor: String!
