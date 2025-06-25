@@ -9,9 +9,13 @@ export class InMemoryPubSubService extends PubSubService {
     
     private readonly pubsub = new PubSub()
 
-    async publish<T>(event: string, data: T): Promise<void> {
+    async publishForGraphQL<T>(event: string, data: T): Promise<void> {
         this.pubsub.asyncIterableIterator
         return this.pubsub.publish(event, { [event]: data });
+    }
+
+    publish<T>(event: string, payload: T): Promise<void> {
+        return this.pubsub.publish(event, payload);
     }
 
 

@@ -1,19 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateDraftEventDto } from './dto/create-draft-event.dto';
 import { ActiveUserData } from '@/auth/interfaces/active-user-data.interface';
-import { DraftEventDto } from './dto/draft-event.dto';
-import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
-import { EventDto } from '@/events/dto/event.dto';
-import { pick } from 'lodash';
 import { DateUtils } from '@/common/date.utils';
 import { mapToDto } from '@/common/mappers/map-to-dto.mapper';
+import { EventDto } from '@/events/dto/event.dto';
 import { PaginationQueryDto } from '@/pagination/dto/pagination-query.dto';
-import { DraftEvent } from '@prisma/client';
-import { PaginationService } from '@/pagination/services/pagination.service';
 import { PaginationResult } from '@/pagination/interfaces/pagination-result.interface';
-import { DraftEvents } from './enums/draft-events.enum';
-import { PubSubService } from '@/pub-sub/pub-sub.service';
+import { PaginationService } from '@/pagination/services/pagination.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { DraftEvent } from '@prisma/client';
+import { pick } from 'lodash';
+import { CreateDraftEventDto } from './dto/create-draft-event.dto';
+import { DraftEventDto } from './dto/draft-event.dto';
+import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 
 @Injectable()
 export class DraftEventsService {
@@ -21,7 +19,6 @@ export class DraftEventsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly paginationService: PaginationService,
-        private readonly pubsubService: PubSubService
     ){}
 
     async createDraftEvent(tokenPayload: ActiveUserData,createDraftEventDto: CreateDraftEventDto) {
@@ -35,9 +32,7 @@ export class DraftEventsService {
                 organizerId: tokenPayload.sub,
             }
         });
-        const createdDraftDto = mapToDto(DraftEventDto, createdDraft);
-        this.pubsubService.publish(DraftEvents.CREATED, createdDraftDto)
-        return createdDraftDto
+        return mapToDto(DraftEventDto, createdDraft);
     }
 
     async getDrafts(organizerId: number, paginationQueryDto: PaginationQueryDto): Promise<PaginationResult<DraftEventDto>> {
@@ -93,11 +88,7 @@ export class DraftEventsService {
             where: { id, organizerId: tokenPayload.sub },
             data: updateDraftDto
         });
-        const updatedDraftDto = mapToDto(DraftEventDto, updatedDraft);
-
-        this.pubsubService.publish(DraftEvents.UPDATED, updatedDraftDto)
-
-        return updatedDraftDto
+        return mapToDto(DraftEventDto, updatedDraft);
     }
 
     async deleteDraft(id: number, organizerId: number): Promise<void> {
@@ -111,11 +102,9 @@ export class DraftEventsService {
             throw new NotFoundException("Draft not found");
         }
 
-        const deletedDraft = await this.prisma.draftEvent.delete({
+        await this.prisma.draftEvent.delete({
             where: { id, organizerId }
         });
-        const deletedDraftDto = mapToDto(DraftEventDto, deletedDraft);
-        this.pubsubService.publish(DraftEvents.DELETED, deletedDraftDto)
     }
 
     async publishDraft(id: number, organizerId: number): Promise<EventDto> {
@@ -142,11 +131,9 @@ export class DraftEventsService {
                 create: draftData
             })
 
-            const draftEventDeleted = await txn.draftEvent.delete({
+            await txn.draftEvent.delete({
                 where: {id: draft.id}
             })
-            const draftEventDeletedDto = mapToDto(DraftEventDto, draftEventDeleted);
-            this.pubsubService.publish(DraftEvents.DELETED, draftEventDeletedDto)
             return event
         })
 
@@ -180,10 +167,8 @@ export class DraftEventsService {
                 originalEventId: event.id
             }
         })
-        const newDraftDto = mapToDto(DraftEventDto, newDraft);
-        this.pubsubService.publish(DraftEvents.CREATED, newDraftDto)
 
-        return newDraftDto
+        return mapToDto(DraftEventDto, newDraft);
     }
 
 }

@@ -6,12 +6,14 @@ import { DraftEventResolver } from './resolvers/draft-event.resolver';
 import { DraftEventsMutationResolver } from './resolvers/draft-events-mutation.resolver';
 import { PubSubModule } from '@/pub-sub/pub-sub.module';
 import { DraftEventsSubscriptionResolver } from './resolvers/draft-events-subscription.resolver';
+import { DraftEventSubscriber } from './draft-event.subscriber';
 
 @Module({
   imports: [
     PubSubModule
   ],
-  providers: [DraftEventsService, DraftEventsQueryResolver, DraftEventResolver, DraftEventsMutationResolver, DraftEventsSubscriptionResolver],
+  providers: [
+    DraftEventsService, DraftEventsQueryResolver, DraftEventResolver, DraftEventsMutationResolver, DraftEventsSubscriptionResolver, DraftEventSubscriber],
   controllers: [DraftEventsController],
   exports: [
     DraftEventsService

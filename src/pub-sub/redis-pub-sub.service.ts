@@ -21,8 +21,12 @@ export class RedisPubSubService extends PubSubService {
         });
     }
 
-    publish<T>(event: string, data: T): Promise<void> {
+    publishForGraphQL<T>(event: string, data: T): Promise<void> {
         return this.pubsub.publish(event, { [event]: data });
+    }
+
+    publish<T>(event: string, payload: T): Promise<void> {
+        return this.pubsub.publish(event, payload);
     }
 
     asyncIterableIterator<T>(triggers: string | string[]): PubSubAsyncIterableIterator<T> {

@@ -1,5 +1,17 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
+import { EventRegistryService } from './events/event-registry.service';
 
 
-@Module({})
+@Module({
+    imports: [
+        DiscoveryModule
+    ],
+    providers: [
+        EventRegistryService
+    ],
+    exports: [
+        EventRegistryService
+    ]
+})
 export class CommonModule {}
